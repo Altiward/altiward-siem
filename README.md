@@ -1,0 +1,102 @@
+# altiward-siem
+
+Detections, hunting queries and saved searches for [Altiward](https://github.com/Altiward/altiward)
+and [altiward-forwarder](https://github.com/Altiward/altiward-forwarder) events in Microsoft
+Sentinel and Splunk.
+
+Both projects send your SIEM the same OCSF records: the Altiward server for everything its
+agent sees, and the forwarder for SAP Privileges' own grant and revoke reports. The content
+here reads those records in Sentinel's `AltiwardOCSF_CL` table and Splunk's `altiward:ocsf`
+sourcetype, the way the Altiward setup creates them. CI checks every field a rule or search
+names against example records from both projects.
+
+**Status:** first release in preparation.
+
+## What's here
+
+Each detection says whose events it needs. **Altiward** means the Altiward server. **Both**
+means it also works with altiward-forwarder's records, which are grants and revokes only
+(OCSF User Access Management, `class_uid` 3005).
+
+| Detection | Needs | Sentinel | Splunk |
+| --- | --- | --- | --- |
+| Admin rights SAP Privileges didn't grant, still unexplained | Altiward | [rule](sentinel/analytics-rules/admin-out-of-band.yaml) | [alert](splunk/searches/admin-rights-not-granted-by-sap-privileges.spl) |
+| Admin rights that outlived their expiry | Altiward | [rule](sentinel/analytics-rules/rights-after-expiry.yaml) | [alert](splunk/searches/admin-rights-after-expiry.spl) |
+| A tamper check failing on a Mac | Altiward | [rule](sentinel/analytics-rules/tamper.yaml) | [alert](splunk/searches/tamper-checks-failing.spl) |
+| Persistence that appeared while someone was admin | Altiward | [rule](sentinel/analytics-rules/persistence-while-admin.yaml) | [alert](splunk/searches/persistence-while-admin.spl) |
+| A local account that appeared while someone was admin | Altiward | [rule](sentinel/analytics-rules/account-created.yaml) | [alert](splunk/searches/local-account-created-while-admin.spl) |
+| A Mac that stopped checking in | Altiward | [rule](sentinel/analytics-rules/agent-silent.yaml) | [alert](splunk/searches/macs-that-stopped-checking-in.spl) |
+| A grant or revoke the Mac's admin group contradicts | Altiward | [rule](sentinel/analytics-rules/contradicted-claim.yaml) | [alert](splunk/searches/contradicted-grants-and-revokes.spl) |
+| The console's break-glass token used | Altiward | [rule](sentinel/analytics-rules/break-glass-token.yaml) | [alert](splunk/searches/break-glass-token-use.spl) |
+| More than 10 elevations by one user in 7 days | Both | [rule](sentinel/analytics-rules/frequent-elevations.yaml) | [alert](splunk/searches/frequent-elevations.spl) |
+| Elevations, with reason, expiry and who reported them | Both | [hunting](sentinel/hunting/elevations.kql) | [report](splunk/searches/elevations.spl) |
+| Console actions: revokes, enrollment approvals, settings changes | Altiward | [hunting](sentinel/hunting/console-actions.kql) | [report](splunk/searches/console-actions.spl) |
+| Console sign-ins and sign-outs | Altiward | [hunting](sentinel/hunting/console-sign-ins.kql) | [report](splunk/searches/console-sign-ins.spl) |
+
+Sentinel rules run every hour over the last hour (the elevation count: daily over 7 days).
+Rules about findings that can be resolved (unexplained admin rights, tamper checks, silent
+Macs) alert only on findings still open at the end of that hour.
+
+Altiward-forwarder's webhook events name the Mac by `device.uid` only, so `DeviceSerial`
+(Sentinel) is empty for them and Splunk's `host` is the hardware UUID. Its on-Mac hook
+reports the serial number too.
+
+## Microsoft Sentinel
+
+First set up the `AltiwardOCSF_CL` table as
+[Altiward's Sentinel guide](https://github.com/Altiward/altiward/tree/main/integrations/sentinel)
+describes (altiward-forwarder uses the same table). Rules can't be created before it exists.
+
+### All analytics rules at once (preview)
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAltiward%2Faltiward-siem%2Fv0.1.0%2Fsentinel%2Fazuredeploy.json)
+
+Choose the resource group of your Sentinel workspace and enter the workspace's name. It
+creates the rules turned on, with one alert per result row. The button deploys
+[`sentinel/azuredeploy.json`](sentinel/azuredeploy.json) from the `v0.1.0` release.
+
+### One rule at a time
+
+In Sentinel, Analytics, create a scheduled query rule from the rule's YAML, or import the
+YAML with your detection-as-code tooling. The files follow the schema of Microsoft's
+[Azure-Sentinel](https://github.com/Azure/Azure-Sentinel) repository, plus a `tags` key
+saying whose events the rule needs.
+
+### Hunting queries
+
+Paste a `.kql` file from [`sentinel/hunting/`](sentinel/hunting/) into Logs, or save it as a
+hunting query.
+
+## Splunk
+
+[`splunk/savedsearches.conf`](splunk/savedsearches.conf) has every search as a saved search:
+alerts that run hourly (the elevation count daily) and reports. Copy it to
+`$SPLUNK_HOME/etc/apps/<your app>/local/savedsearches.conf` and restart Splunk. The searches
+are off until you enable them in Settings, Searches, reports, and alerts, where you also add
+the alert action you want (email, a webhook, your SOAR).
+
+To run one by hand, paste its `.spl` file from [`splunk/searches/`](splunk/searches/) into
+Search.
+
+The searches expect events with sourcetype `altiward:ocsf`, which both projects' HTTP Event
+Collector exports use. See [Altiward's Splunk guide](https://github.com/Altiward/altiward/tree/main/integrations/splunk)
+for the setup and the dashboard.
+
+## The events
+
+The records are OCSF 1.9.0. The Altiward repository documents each event, and its OCSF
+output for sample events is in
+[`integrations/ocsf-examples`](https://github.com/Altiward/altiward/tree/main/integrations/ocsf-examples).
+Copies of those, and of the forwarder's records, are in [`fixtures/`](fixtures/): the checks
+read them.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to add or change a detection. Report security problems
+privately, as the [security policy](https://github.com/Altiward/.github/blob/main/SECURITY.md)
+describes.
+
+## Licence
+
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). SAP and SAP Privileges are
+trademarks of SAP SE; this project isn't affiliated with or endorsed by SAP.

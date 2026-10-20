@@ -1,0 +1,2 @@
+sourcetype="altiward:ocsf" class_uid=3005 status_id=1 severity_id>=3
+| table _time host user.name activity_name status_detail

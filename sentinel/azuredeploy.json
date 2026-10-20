@@ -1,0 +1,446 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspace": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Log Analytics workspace with Microsoft Sentinel, where the Altiward setup created the AltiwardOCSF_CL table"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "c0f139ea-930f-4d51-94c7-7de63ef317a9",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: a local account appeared while someone was admin",
+        "description": "A new local account appeared on a Mac while someone held admin rights: \"Admin account\ncreated\" (SeverityId 4) or \"Local account created\". Account is the new account; UserName\nis who was admin when it appeared, not necessarily who made it.\n",
+        "severity": "High",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == \"altiward.account_created\"\n| project TimeGenerated, DeviceSerial, UserName, SeverityId,\n    Account = tostring(Ocsf.evidences[0].user.name), Message\n",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "Persistence"
+        ],
+        "techniques": [
+          "T1136"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Host",
+            "fieldMappings": [
+              {
+                "identifier": "HostName",
+                "columnName": "DeviceSerial"
+              }
+            ]
+          },
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "identifier": "Name",
+                "columnName": "Account"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "e18b633b-a833-4dc4-9b83-793f333e4188",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: admin rights SAP Privileges didn't grant",
+        "description": "An account on a Mac became an admin without SAP Privileges granting it, and nothing has\nexplained it yet. Making the account a permanent admin in Altiward closes the finding\n(the same finding_info.uid with ActivityId 3), so only unexplained ones alert.\n",
+        "severity": "High",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == \"altiward.admin_out_of_band\"\n| summarize arg_max(TimeGenerated, ActivityId, UserName, Message) by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial\n| where ActivityId == 1\n",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "PrivilegeEscalation",
+          "Persistence"
+        ],
+        "techniques": [
+          "T1078",
+          "T1098"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Host",
+            "fieldMappings": [
+              {
+                "identifier": "HostName",
+                "columnName": "DeviceSerial"
+              }
+            ]
+          },
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "identifier": "Name",
+                "columnName": "UserName"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "b5d482eb-1171-4a83-88d2-4de9df7ad23b",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: a Mac stopped checking in",
+        "description": "The Altiward server hasn't heard from a Mac for longer than the console's setting allows\n(72 hours by default). The agent may have been removed. The Mac checking in again closes\nthe finding with the same finding_info.uid.\n",
+        "severity": "Medium",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == \"altiward.agent_silent\"\n| summarize arg_max(TimeGenerated, ActivityId, Message) by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial\n| where ActivityId == 1\n",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "DefenseEvasion"
+        ],
+        "techniques": [
+          "T1562"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Host",
+            "fieldMappings": [
+              {
+                "identifier": "HostName",
+                "columnName": "DeviceSerial"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "741eef27-60e3-414d-ac1f-8e666b38b6bf",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: the console's break-glass token was used",
+        "description": "Someone acted in the Altiward console with a console token while single sign-on is on:\nthe break-glass login, meant for when the identity provider is down. UserName is\nbreak-glass: and the token's fingerprint.\n",
+        "severity": "Medium",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 6003 and UserName startswith \"break-glass:\"\n| project TimeGenerated, UserName, Action = tostring(Ocsf.api.operation), DeviceSerial, Message\n",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "InitialAccess",
+          "PrivilegeEscalation"
+        ],
+        "techniques": [
+          "T1078"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "identifier": "Name",
+                "columnName": "UserName"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "96a4c1b3-e8fc-42f3-be1d-83618f72804a",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: a grant or revoke the admin group contradicts",
+        "description": "SAP Privileges reported a grant or revoke that the Mac's admin group doesn't show, which\ncan mean someone is tampering with the report. The detail says what the agent found.\n",
+        "severity": "Medium",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 3005 and toint(Ocsf.status_id) == 1 and SeverityId >= 3\n| project TimeGenerated, DeviceSerial, UserName, Message, Detail = tostring(Ocsf.status_detail)\n",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "DefenseEvasion",
+          "PrivilegeEscalation"
+        ],
+        "techniques": [
+          "T1548"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Host",
+            "fieldMappings": [
+              {
+                "identifier": "HostName",
+                "columnName": "DeviceSerial"
+              }
+            ]
+          },
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "identifier": "Name",
+                "columnName": "UserName"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "0189bbb2-3420-4ccf-b637-a2bcb3a79a94",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: more than 10 elevations by one user in 7 days",
+        "description": "One person asked SAP Privileges for admin rights more than 10 times in 7 days. Either\nthey need a different way to do their work, or the rights are being used for something\nelse. Works with the Altiward agent's events and altiward-forwarder's.\n",
+        "severity": "Low",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 3005 and ActivityId == 1 and toint(Ocsf.status_id) == 1\n| summarize Elevations = count() by UserName\n| where Elevations > 10\n",
+        "queryFrequency": "P1D",
+        "queryPeriod": "P7D",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "PrivilegeEscalation"
+        ],
+        "techniques": [
+          "T1078"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "identifier": "Name",
+                "columnName": "UserName"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "b00164bc-cf78-4f86-a6e7-ffb8874e0849",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: persistence appeared while someone was admin",
+        "description": "A launch daemon or agent, an SSH key, a sudoers rule or another way back in appeared on a\nMac while someone held admin rights. Each file is a row, to look up in your EDR's data for\nthe same Mac; Session ties it to the elevation.\n",
+        "severity": "High",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == \"altiward.persistence_detected\"\n| mv-expand Evidence = Ocsf.evidences\n| project TimeGenerated, DeviceSerial, UserName, Session = tostring(Ocsf.metadata.correlation_uid),\n    Path = tostring(Evidence.file.path), Message\n",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "Persistence",
+          "PrivilegeEscalation"
+        ],
+        "techniques": [
+          "T1543",
+          "T1098",
+          "T1548"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Host",
+            "fieldMappings": [
+              {
+                "identifier": "HostName",
+                "columnName": "DeviceSerial"
+              }
+            ]
+          },
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "identifier": "Name",
+                "columnName": "UserName"
+              }
+            ]
+          },
+          {
+            "entityType": "File",
+            "fieldMappings": [
+              {
+                "identifier": "Name",
+                "columnName": "Path"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "e9245a96-0fbb-4cce-bd3c-d8741bd9a107",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: admin rights outlived their expiry",
+        "description": "Admin rights were still held after SAP Privileges' expiry, usually because its timer was\nstopped. Altiward raises it whether or not it removed them: SeverityId 4 means it\ncouldn't.\n",
+        "severity": "Medium",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == \"altiward.rights_after_expiry\"\n| project TimeGenerated, DeviceSerial, UserName, SeverityId, Message\n",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "PrivilegeEscalation",
+          "DefenseEvasion"
+        ],
+        "techniques": [
+          "T1078",
+          "T1562"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Host",
+            "fieldMappings": [
+              {
+                "identifier": "HostName",
+                "columnName": "DeviceSerial"
+              }
+            ]
+          },
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "identifier": "Name",
+                "columnName": "UserName"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "34aa11ec-4978-4a6e-ab36-4797370548d8",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: a tamper check is failing",
+        "description": "One of the Altiward agent's integrity checks failed on a Mac, such as SAP Privileges'\nsettings no longer being managed. A failure and its fix share finding_info.uid, so only\nchecks still failing at the end of the hour alert.\n",
+        "severity": "Medium",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) startswith \"altiward.tamper.\"\n| summarize arg_max(TimeGenerated, ActivityId, SeverityId, Message) by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial\n| where ActivityId == 1\n",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "DefenseEvasion"
+        ],
+        "techniques": [
+          "T1562"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Host",
+            "fieldMappings": [
+              {
+                "identifier": "HostName",
+                "columnName": "DeviceSerial"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    }
+  ]
+}

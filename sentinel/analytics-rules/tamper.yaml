@@ -1,0 +1,30 @@
+id: 34aa11ec-4978-4a6e-ab36-4797370548d8
+name: "Altiward: a tamper check is failing"
+description: |
+  One of the Altiward agent's integrity checks failed on a Mac, such as SAP Privileges'
+  settings no longer being managed. A failure and its fix share finding_info.uid, so only
+  checks still failing at the end of the hour alert.
+severity: Medium
+requiredDataConnectors: []
+queryFrequency: 1h
+queryPeriod: 1h
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - DefenseEvasion
+relevantTechniques:
+  - T1562.001
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) startswith "altiward.tamper."
+  | summarize arg_max(TimeGenerated, ActivityId, SeverityId, Message) by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial
+  | where ActivityId == 1
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceSerial
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled

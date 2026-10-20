@@ -1,0 +1,2 @@
+sourcetype="altiward:ocsf" class_uid=3005 activity_id=1 status_id=1 earliest=-7d
+| stats count by user.name | where count > 10

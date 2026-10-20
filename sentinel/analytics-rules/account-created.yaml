@@ -1,0 +1,34 @@
+id: c0f139ea-930f-4d51-94c7-7de63ef317a9
+name: "Altiward: a local account appeared while someone was admin"
+description: |
+  A new local account appeared on a Mac while someone held admin rights: "Admin account
+  created" (SeverityId 4) or "Local account created". Account is the new account; UserName
+  is who was admin when it appeared, not necessarily who made it.
+severity: High
+requiredDataConnectors: []
+queryFrequency: 1h
+queryPeriod: 1h
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - Persistence
+relevantTechniques:
+  - T1136.001
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == "altiward.account_created"
+  | project TimeGenerated, DeviceSerial, UserName, SeverityId,
+      Account = tostring(Ocsf.evidences[0].user.name), Message
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceSerial
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: Account
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled

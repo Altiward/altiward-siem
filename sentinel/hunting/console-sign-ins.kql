@@ -1,0 +1,6 @@
+// Single sign-on to the Altiward console: sign-ins (with the role given) and sign-outs.
+// Tags: altiward
+AltiwardOCSF_CL
+| where ClassUid == 3002
+| project TimeGenerated, UserName, Activity = tostring(Ocsf.activity_name), Message
+| order by TimeGenerated desc

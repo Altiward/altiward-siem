@@ -1,0 +1,36 @@
+id: e18b633b-a833-4dc4-9b83-793f333e4188
+name: "Altiward: admin rights SAP Privileges didn't grant"
+description: |
+  An account on a Mac became an admin without SAP Privileges granting it, and nothing has
+  explained it yet. Making the account a permanent admin in Altiward closes the finding
+  (the same finding_info.uid with ActivityId 3), so only unexplained ones alert.
+severity: High
+requiredDataConnectors: []
+queryFrequency: 1h
+queryPeriod: 1h
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - PrivilegeEscalation
+  - Persistence
+relevantTechniques:
+  - T1078.003
+  - T1098
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == "altiward.admin_out_of_band"
+  | summarize arg_max(TimeGenerated, ActivityId, UserName, Message) by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial
+  | where ActivityId == 1
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceSerial
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: UserName
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled

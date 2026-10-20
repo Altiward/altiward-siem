@@ -1,0 +1,30 @@
+id: b5d482eb-1171-4a83-88d2-4de9df7ad23b
+name: "Altiward: a Mac stopped checking in"
+description: |
+  The Altiward server hasn't heard from a Mac for longer than the console's setting allows
+  (72 hours by default). The agent may have been removed. The Mac checking in again closes
+  the finding with the same finding_info.uid.
+severity: Medium
+requiredDataConnectors: []
+queryFrequency: 1h
+queryPeriod: 1h
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - DefenseEvasion
+relevantTechniques:
+  - T1562.001
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == "altiward.agent_silent"
+  | summarize arg_max(TimeGenerated, ActivityId, Message) by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial
+  | where ActivityId == 1
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceSerial
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled

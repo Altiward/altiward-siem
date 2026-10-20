@@ -1,0 +1,2 @@
+sourcetype="altiward:ocsf" class_uid=2004 finding_info.analytic.name="altiward.rights_after_expiry"
+| table _time host user.name severity message

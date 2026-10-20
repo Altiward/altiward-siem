@@ -1,0 +1,2 @@
+sourcetype="altiward:ocsf" class_uid=6003
+| table _time actor.user.name api.operation message

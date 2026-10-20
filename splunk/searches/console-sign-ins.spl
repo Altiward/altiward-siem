@@ -1,0 +1,2 @@
+sourcetype="altiward:ocsf" class_uid=3002 service.name="Altiward console"
+| table _time user.name activity_name message

@@ -1,0 +1,8 @@
+// Console actions: who revoked admin rights, approved enrollments or changed settings in
+// the Altiward console. UserName is who did it (an email with single sign-on, otherwise a
+// console token's fingerprint) and DeviceSerial the Mac acted on, if any.
+// Tags: altiward
+AltiwardOCSF_CL
+| where ClassUid == 6003
+| project TimeGenerated, UserName, Action = tostring(Ocsf.api.operation), DeviceSerial, Message
+| order by TimeGenerated desc

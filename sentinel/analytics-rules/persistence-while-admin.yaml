@@ -1,0 +1,42 @@
+id: b00164bc-cf78-4f86-a6e7-ffb8874e0849
+name: "Altiward: persistence appeared while someone was admin"
+description: |
+  A launch daemon or agent, an SSH key, a sudoers rule or another way back in appeared on a
+  Mac while someone held admin rights. Each file is a row, to look up in your EDR's data for
+  the same Mac; Session ties it to the elevation.
+severity: High
+requiredDataConnectors: []
+queryFrequency: 1h
+queryPeriod: 1h
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - Persistence
+  - PrivilegeEscalation
+relevantTechniques:
+  - T1543.004
+  - T1098.004
+  - T1548.003
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == "altiward.persistence_detected"
+  | mv-expand Evidence = Ocsf.evidences
+  | project TimeGenerated, DeviceSerial, UserName, Session = tostring(Ocsf.metadata.correlation_uid),
+      Path = tostring(Evidence.file.path), Message
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceSerial
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: UserName
+  - entityType: File
+    fieldMappings:
+      - identifier: Name
+        columnName: Path
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled

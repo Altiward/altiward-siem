@@ -1,0 +1,2 @@
+sourcetype="altiward:ocsf" class_uid=2004 finding_info.analytic.name="altiward.persistence_detected"
+| table _time host user.name metadata.correlation_uid evidences{}.file.path message

@@ -1,0 +1,2 @@
+sourcetype="altiward:ocsf" class_uid=3005 activity_id=1
+| table _time host device.uid user.name unmapped.altiward.reason unmapped.altiward.expires_time metadata.product.name message

@@ -1,0 +1,33 @@
+id: 96a4c1b3-e8fc-42f3-be1d-83618f72804a
+name: "Altiward: a grant or revoke the admin group contradicts"
+description: |
+  SAP Privileges reported a grant or revoke that the Mac's admin group doesn't show, which
+  can mean someone is tampering with the report. The detail says what the agent found.
+severity: Medium
+requiredDataConnectors: []
+queryFrequency: 1h
+queryPeriod: 1h
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - DefenseEvasion
+  - PrivilegeEscalation
+relevantTechniques:
+  - T1548
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 3005 and toint(Ocsf.status_id) == 1 and SeverityId >= 3
+  | project TimeGenerated, DeviceSerial, UserName, Message, Detail = tostring(Ocsf.status_detail)
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceSerial
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: UserName
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled

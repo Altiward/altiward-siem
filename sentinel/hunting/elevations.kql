@@ -1,0 +1,11 @@
+// Admin rights granted through SAP Privileges: the reason given, when they expire, and
+// which product reported it (Altiward, or Altiward Forwarder). The forwarder's webhook
+// events name the Mac by DeviceUid only; DeviceSerial is empty for them.
+// Tags: altiward, forwarder
+AltiwardOCSF_CL
+| where ClassUid == 3005 and ActivityId == 1
+| project TimeGenerated, DeviceSerial, DeviceUid = tostring(Ocsf.device.uid), UserName,
+    Reason = tostring(Ocsf.unmapped.altiward.reason),
+    Expires = unixtime_milliseconds_todatetime(tolong(Ocsf.unmapped.altiward.expires_time)),
+    ReportedBy = tostring(Ocsf.metadata.product.name), Message
+| order by TimeGenerated desc

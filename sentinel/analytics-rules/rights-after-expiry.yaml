@@ -1,0 +1,35 @@
+id: e9245a96-0fbb-4cce-bd3c-d8741bd9a107
+name: "Altiward: admin rights outlived their expiry"
+description: |
+  Admin rights were still held after SAP Privileges' expiry, usually because its timer was
+  stopped. Altiward raises it whether or not it removed them: SeverityId 4 means it
+  couldn't.
+severity: Medium
+requiredDataConnectors: []
+queryFrequency: 1h
+queryPeriod: 1h
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - PrivilegeEscalation
+  - DefenseEvasion
+relevantTechniques:
+  - T1078.003
+  - T1562.001
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == "altiward.rights_after_expiry"
+  | project TimeGenerated, DeviceSerial, UserName, SeverityId, Message
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceSerial
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: UserName
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled

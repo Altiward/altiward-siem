@@ -1,0 +1,30 @@
+id: 741eef27-60e3-414d-ac1f-8e666b38b6bf
+name: "Altiward: the console's break-glass token was used"
+description: |
+  Someone acted in the Altiward console with a console token while single sign-on is on:
+  the break-glass login, meant for when the identity provider is down. UserName is
+  break-glass: and the token's fingerprint.
+severity: Medium
+requiredDataConnectors: []
+queryFrequency: 1h
+queryPeriod: 1h
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - InitialAccess
+  - PrivilegeEscalation
+relevantTechniques:
+  - T1078
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 6003 and UserName startswith "break-glass:"
+  | project TimeGenerated, UserName, Action = tostring(Ocsf.api.operation), DeviceSerial, Message
+entityMappings:
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: UserName
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled
