@@ -10,7 +10,9 @@ here reads those records in Sentinel's `AltiwardOCSF_CL` table and Splunk's `alt
 sourcetype, the way the Altiward setup creates them. CI checks every field a rule or search
 names against example records from both projects.
 
-**Status:** first release in preparation.
+**Status:** 0.1.0, the first release. Pin a release, and watch the repository's releases to
+hear when rules are added or changed: each release's notes, also in
+[CHANGELOG.md](CHANGELOG.md), say what changed and whose events it needs.
 
 ## What's here
 
