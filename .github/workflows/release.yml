@@ -1,0 +1,42 @@
+name: Release
+
+# Publishes a GitHub release when a vX.Y.Z tag is pushed: the checks, then the release with
+# its CHANGELOG.md section as notes and the ARM template behind the Deploy to Azure button
+# attached. No signing or approval step: the repository ships rule text, not code that runs.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Release notes (refuses a version without a dated CHANGELOG section)
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "tag must be vX.Y.Z, got $GITHUB_REF_NAME"; exit 1; }
+          scripts/release-notes.sh "$v" > "$RUNNER_TEMP/RELEASE_NOTES.md"
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false # a release builds from nothing a cache could have changed
+      - name: Checks
+        run: make lint test check
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" sentinel/azuredeploy.json \
+            --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/RELEASE_NOTES.md"

@@ -45,6 +45,10 @@ scripts/build-arm.sh
 make lint test check
 ```
 
+Add a line to [CHANGELOG.md](CHANGELOG.md) under the coming release, saying what the
+detection catches and whose events it needs. A maintainer releases by dating that section
+and pushing a `vX.Y.Z` tag; `.github/workflows/release.yml` publishes the release.
+
 ## What the checks look at
 
 `make check` (`go run ./tools/rulecheck check`) fails when:
