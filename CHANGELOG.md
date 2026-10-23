@@ -9,7 +9,7 @@ renamed rule or search is a breaking change, called out under `### Breaking chan
 each new or changed detection whose events it needs: Altiward, or both Altiward and
 altiward-forwarder.
 
-## 0.2.0 - unreleased
+## 0.2.0 - 2026-10-23
 
 ### Changes
 
@@ -17,6 +17,10 @@ altiward-forwarder.
   day over a limit you set, 120 minutes by default. Set it to SAP Privileges' AdminBudget to
   report the same limit from your SIEM, for Macs on Privileges 2.6 and earlier too, without a
   clock change resetting it. altiward-forwarder's elevations count up to their expiry at most.
+- With Altiward server 0.2.0 and agent 0.1.1, the tamper detections also alert on each attempt
+  SAP Privileges' system extension blocked on itself (`altiward.tamper.privileges_blocked`,
+  High), and the out-of-band detections close a finding when a Privileges grant replaces it.
+  Neither needed a rule change; the example records are updated. Needs Altiward's events.
 - The checks read Sentinel queries that start with `let` statements, and Splunk searches that
   make fields with `eval` or name fields in single quotes.
 
