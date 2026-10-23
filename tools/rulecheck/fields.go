@@ -58,11 +58,16 @@ var (
 	splCompare  = regexp.MustCompile(`([A-Za-z_][\w.{}]*)\s*(?:>=|<=|!=|=|>|<)`)
 	splFunc     = regexp.MustCompile(`\b(?:latest|earliest|values|list|first|last|max|min|sum|avg|dc|count)\(([\w.{}]+)\)`)
 	splAlias    = regexp.MustCompile(`\bas\s+(\w+)`)
+	splEval     = regexp.MustCompile(`\|\s*eval\s+([^|]+)`)
+	splAssign   = regexp.MustCompile(`^\s*([A-Za-z_]\w*)\s*=`)
+	splQuoted   = regexp.MustCompile(`'([A-Za-z_][\w.{}]*)'`)
 	splClause   = regexp.MustCompile(`(?:\|\s*(?:table|fields)|\bby)\s+([^|]+)`)
 	splToken    = regexp.MustCompile(`[A-Za-z_][\w.{}]*`)
 	splClass    = regexp.MustCompile(`\bclass_uid=(\d+)`)
 	splAnalytic = regexp.MustCompile(`\bfinding_info\.analytic\.name="([^"]+)"`)
-	splBuiltIn  = map[string]bool{"sourcetype": true, "source": true, "index": true, "host": true, "_time": true, "earliest": true, "latest": true, "count": true}
+	// Splunk's own fields, and search and streamstats options that look like comparisons.
+	splBuiltIn = map[string]bool{"sourcetype": true, "source": true, "index": true, "host": true, "_time": true, "earliest": true,
+		"latest": true, "count": true, "current": true}
 )
 
 func (q *query) add(name string, paths ...string) {
@@ -83,8 +88,9 @@ func ocsfPath(dotted string) string {
 	return arrayIndex.ReplaceAllString(strings.TrimPrefix(dotted, "."), "[]")
 }
 
-// analyzeKQL reads a query over AltiwardOCSF_CL: its columns, its Ocsf.* paths (through
-// mv-expand aliases too), and its ClassUid and analytic-name filters.
+// analyzeKQL reads a query over AltiwardOCSF_CL: its table (after any let statements), its
+// columns, its Ocsf.* paths (through mv-expand aliases too), and its ClassUid and
+// analytic-name filters.
 func analyzeKQL(kql string) query {
 	var lines []string
 	for _, l := range strings.Split(kql, "\n") {
@@ -94,7 +100,10 @@ func analyzeKQL(kql string) query {
 	}
 	raw := strings.Join(lines, "\n")
 	var q query
-	if w := kqlWord.FindString(raw); w != "" {
+	code := kqlString.ReplaceAllString(raw, `""`)
+	// let statements end with ";"; the query that reads the table is the last statement.
+	stmts := strings.Split(code, ";")
+	if w := kqlWord.FindString(stmts[len(stmts)-1]); w != "" {
 		q.Table = w
 	}
 	for _, m := range kqlClass.FindAllStringSubmatch(raw, -1) {
@@ -104,7 +113,6 @@ func analyzeKQL(kql string) query {
 	if m := kqlAnalytic.FindStringSubmatch(raw); m != nil {
 		q.Analytic = match{Value: m[2], Prefix: m[1] == "startswith"}
 	}
-	code := kqlString.ReplaceAllString(raw, `""`)
 	for _, w := range kqlWord.FindAllString(code, -1) {
 		if paths, ok := columns[w]; ok {
 			q.add(w, paths...)
@@ -125,8 +133,8 @@ func analyzeKQL(kql string) query {
 }
 
 // analyzeSPL reads a search over altiward:ocsf events: the fields it compares, aggregates,
-// tables or groups by (aliases made with "as" and Splunk's own fields left out), and its
-// class_uid and analytic-name filters.
+// tables, groups by or names in single quotes (fields made with eval or "as" and Splunk's
+// own fields left out), and its class_uid and analytic-name filters.
 func analyzeSPL(spl string) query {
 	var q query
 	for _, m := range splClass.FindAllStringSubmatch(spl, -1) {
@@ -142,8 +150,12 @@ func analyzeSPL(spl string) query {
 	for _, m := range splAlias.FindAllStringSubmatch(code, -1) {
 		aliases[m[1]] = true
 	}
+	made := evalFields(code)
 	code = splAlias.ReplaceAllString(code, "")
 	var names []string
+	for _, m := range splQuoted.FindAllStringSubmatch(code, -1) {
+		names = append(names, m[1])
+	}
 	for _, m := range splCompare.FindAllStringSubmatch(code, -1) {
 		names = append(names, m[1])
 	}
@@ -154,13 +166,37 @@ func analyzeSPL(spl string) query {
 		names = append(names, splToken.FindAllString(m[1], -1)...)
 	}
 	for _, n := range names {
-		if splBuiltIn[n] || aliases[n] && !strings.Contains(n, ".") && !isAggregated(code, n) {
+		if splBuiltIn[n] || made[n] || aliases[n] && !strings.Contains(n, ".") && !isAggregated(code, n) {
 			continue
 		}
 		q.add(n, strings.ReplaceAll(n, "{}", "[]"))
 	}
 	q.sort()
 	return q
+}
+
+// evalFields is the fields eval commands make: the name before each "=" in eval x=..., y=...
+func evalFields(code string) map[string]bool {
+	made := map[string]bool{}
+	for _, m := range splEval.FindAllStringSubmatch(code, -1) {
+		// Split the assignments at commas outside parentheses.
+		depth, start := 0, 0
+		expr := m[1] + ","
+		for i, c := range expr {
+			switch {
+			case c == '(':
+				depth++
+			case c == ')':
+				depth--
+			case c == ',' && depth == 0:
+				if a := splAssign.FindStringSubmatch(expr[start:i]); a != nil {
+					made[a[1]] = true
+				}
+				start = i + 1
+			}
+		}
+	}
+	return made
 }
 
 // isAggregated reports whether an alias is also a field read by a function, as in

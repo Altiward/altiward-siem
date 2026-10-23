@@ -56,6 +56,18 @@ func TestKQLFields(t *testing.T) {
 	if q.Analytic != (match{Value: "altiward.tamper.", Prefix: true}) {
 		t.Errorf("startswith: %+v", q.Analytic)
 	}
+
+	// let statements come before the table.
+	q = analyzeKQL(`// The limit.
+let MaxAdminMinutes = 120;
+let Note = "a; b";
+AltiwardOCSF_CL
+| where ClassUid == 3005
+| summarize Elevations = count() by UserName
+| where Elevations > MaxAdminMinutes`)
+	if q.Table != "AltiwardOCSF_CL" {
+		t.Errorf("table after let: %q", q.Table)
+	}
 }
 
 func TestSPLFields(t *testing.T) {
@@ -81,5 +93,18 @@ func TestSPLFields(t *testing.T) {
 | stats count by user.name | where count > 10`)
 	if got := names(q.Fields); !reflect.DeepEqual(got, []string{"activity_id", "class_uid", "severity_id", "status_id", "user.name"}) {
 		t.Errorf("fields %q", got)
+	}
+
+	// Fields eval makes aren't looked for in the fixtures, however they're used; fields in
+	// single quotes are.
+	q = analyzeSPL(`sourcetype="altiward:ocsf" class_uid=3005
+| eval day_end=floor(now()/86400)*86400, mac=coalesce('device.hw_info.serial_number', 'device.uid')
+| eval minutes=if('metadata.product.name'="x", min(_time, day_end), 0)
+| streamstats current=f last(_time) as next_time by user.name
+| where minutes > 0
+| stats sum(minutes) as total values(mac) as macs by user.name day_end`)
+	want = []string{"class_uid", "device.hw_info.serial_number", "device.uid", "metadata.product.name", "user.name"}
+	if got := names(q.Fields); !reflect.DeepEqual(got, want) {
+		t.Errorf("fields %q\nwant   %q", got, want)
 	}
 }

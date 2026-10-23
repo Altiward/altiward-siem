@@ -9,6 +9,17 @@ renamed rule or search is a breaking change, called out under `### Breaking chan
 each new or changed detection whose events it needs: Altiward, or both Altiward and
 altiward-forwarder.
 
+## 0.2.0 - unreleased
+
+### Changes
+
+- A detection that works with either project's events: one user's total admin time in a UTC
+  day over a limit you set, 120 minutes by default. Set it to SAP Privileges' AdminBudget to
+  report the same limit from your SIEM, for Macs on Privileges 2.6 and earlier too, without a
+  clock change resetting it. altiward-forwarder's elevations count up to their expiry at most.
+- The checks read Sentinel queries that start with `let` statements, and Splunk searches that
+  make fields with `eval` or name fields in single quotes.
+
 ## 0.1.0 - 2026-10-20
 
 ### Changes

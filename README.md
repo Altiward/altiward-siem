@@ -31,11 +31,13 @@ means it also works with altiward-forwarder's records, which are grants and revo
 | A grant or revoke the Mac's admin group contradicts | Altiward | [rule](sentinel/analytics-rules/contradicted-claim.yaml) | [alert](splunk/searches/contradicted-grants-and-revokes.spl) |
 | The console's break-glass token used | Altiward | [rule](sentinel/analytics-rules/break-glass-token.yaml) | [alert](splunk/searches/break-glass-token-use.spl) |
 | More than 10 elevations by one user in 7 days | Both | [rule](sentinel/analytics-rules/frequent-elevations.yaml) | [alert](splunk/searches/frequent-elevations.spl) |
+| One user's admin time in a UTC day over a limit you set (120 minutes by default) | Both | [rule](sentinel/analytics-rules/admin-time-per-day.yaml) | [alert](splunk/searches/admin-time-per-user-per-day.spl) |
 | Elevations, with reason, expiry and who reported them | Both | [hunting](sentinel/hunting/elevations.kql) | [report](splunk/searches/elevations.spl) |
 | Console actions: revokes, enrollment approvals, settings changes | Altiward | [hunting](sentinel/hunting/console-actions.kql) | [report](splunk/searches/console-actions.spl) |
 | Console sign-ins and sign-outs | Altiward | [hunting](sentinel/hunting/console-sign-ins.kql) | [report](splunk/searches/console-sign-ins.spl) |
 
-Sentinel rules run every hour over the last hour (the elevation count: daily over 7 days).
+Sentinel rules run every hour over the last hour (the elevation count: daily over 7 days;
+admin time per day: daily, for the last complete UTC day).
 Rules about findings that can be resolved (unexplained admin rights, tamper checks, silent
 Macs) alert only on findings still open at the end of that hour.
 
@@ -72,10 +74,10 @@ hunting query.
 ## Splunk
 
 [`splunk/savedsearches.conf`](splunk/savedsearches.conf) has every search as a saved search:
-alerts that run hourly (the elevation count daily) and reports. Copy it to
-`$SPLUNK_HOME/etc/apps/<your app>/local/savedsearches.conf` and restart Splunk. The searches
-are off until you enable them in Settings, Searches, reports, and alerts, where you also add
-the alert action you want (email, a webhook, your SOAR).
+alerts that run hourly (the elevation count and admin time per day: daily) and reports. Copy
+it to `$SPLUNK_HOME/etc/apps/<your app>/local/savedsearches.conf` and restart Splunk. The
+searches are off until you enable them in Settings, Searches, reports, and alerts, where you
+also add the alert action you want (email, a webhook, your SOAR).
 
 To run one by hand, paste its `.spl` file from [`splunk/searches/`](splunk/searches/) into
 Search.
