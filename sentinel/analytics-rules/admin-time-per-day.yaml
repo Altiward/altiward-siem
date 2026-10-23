@@ -1,0 +1,56 @@
+id: 62d1901a-4f10-4ec9-a1c3-4156faad06c4
+name: "Altiward: one user's admin time in a day over the limit"
+description: |
+  One person held admin rights through SAP Privileges for longer in a day than you allow:
+  120 minutes by default. Change MaxAdminMinutes at the top of the query to tune it, or set
+  it to Privileges' AdminBudget to report the same limit from your SIEM. Unlike
+  AdminBudget, it covers Macs on Privileges 2.6 and earlier, and moving a Mac's clock
+  forward doesn't reset it.
+  It runs daily and reports the last complete day in UTC. An elevation lasts until the next
+  grant or revoke for the same user on the same Mac, or until now if there's none yet. One
+  that crosses midnight counts towards each day for its part in that day. Time on two Macs
+  at once counts twice.
+  Works with the Altiward agent's events and altiward-forwarder's. The forwarder's records
+  have no session ID and can't show rights kept past their expiry, so its elevations count
+  up to their expiry at most. Admin rights Privileges didn't grant aren't counted: the
+  out-of-band rule reports those.
+severity: Low
+requiredDataConnectors: []
+queryFrequency: 1d
+queryPeriod: 3d
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - PrivilegeEscalation
+relevantTechniques:
+  - T1078.003
+query: |
+  // The limit: minutes of admin rights per user per UTC day. Your AdminBudget, to match it.
+  let MaxAdminMinutes = 120;
+  let DayEnd = startofday(now());
+  let DayStart = DayEnd - 1d;
+  AltiwardOCSF_CL
+  | where ClassUid == 3005 and ActivityId in (1, 2) and toint(Ocsf.status_id) == 1
+  | extend DeviceUid = tostring(Ocsf.device.uid)
+  | sort by DeviceUid asc, UserName asc, TimeGenerated asc
+  | extend End = iff(next(DeviceUid) == DeviceUid and next(UserName) == UserName,
+      next(TimeGenerated), now())
+  | where ActivityId == 1
+  | extend Expires = unixtime_milliseconds_todatetime(tolong(Ocsf.unmapped.altiward.expires_time))
+  | extend End = iff(tostring(Ocsf.metadata.product.name) == "Altiward Forwarder" and isnotnull(Expires),
+      min_of(End, Expires), End)
+  | extend Minutes = (min_of(End, DayEnd) - max_of(TimeGenerated, DayStart)) / 1m
+  | where Minutes > 0
+  | summarize AdminMinutes = round(sum(Minutes)), Elevations = count(),
+      Macs = make_set(coalesce(DeviceSerial, DeviceUid)) by UserName, Day = DayStart
+  | where AdminMinutes > MaxAdminMinutes
+entityMappings:
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: UserName
+tags:
+  - altiward
+  - forwarder
+version: 1.0.0
+kind: Scheduled

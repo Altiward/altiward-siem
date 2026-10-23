@@ -1,0 +1,14 @@
+sourcetype="altiward:ocsf" class_uid=3005 status_id=1 (activity_id=1 OR activity_id=2) earliest=-3d
+| eval day_end=floor(now()/86400)*86400, day_start=day_end-86400
+| sort 0 - _time
+| streamstats current=f last(_time) as next_time by device.uid user.name
+| where activity_id=1
+| eval end=coalesce(next_time, now())
+| eval end=if('metadata.product.name'="Altiward Forwarder" AND isnotnull('unmapped.altiward.expires_time'), min(end, 'unmapped.altiward.expires_time'/1000), end)
+| eval minutes=(min(end, day_end) - max(_time, day_start))/60, mac=coalesce('device.hw_info.serial_number', 'device.uid')
+| where minutes > 0
+| stats sum(minutes) as admin_minutes count as elevations values(mac) as macs by user.name day_start
+| eval admin_minutes=round(admin_minutes), _time=day_start
+| eval max_admin_minutes=120
+| where admin_minutes > max_admin_minutes
+| table _time user.name admin_minutes elevations macs

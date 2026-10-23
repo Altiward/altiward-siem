@@ -116,6 +116,47 @@
       "type": "Microsoft.SecurityInsights/alertRules",
       "apiVersion": "2024-09-01",
       "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "62d1901a-4f10-4ec9-a1c3-4156faad06c4",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: one user's admin time in a day over the limit",
+        "description": "One person held admin rights through SAP Privileges for longer in a day than you allow:\n120 minutes by default. Change MaxAdminMinutes at the top of the query to tune it, or set\nit to Privileges' AdminBudget to report the same limit from your SIEM. Unlike\nAdminBudget, it covers Macs on Privileges 2.6 and earlier, and moving a Mac's clock\nforward doesn't reset it.\nIt runs daily and reports the last complete day in UTC. An elevation lasts until the next\ngrant or revoke for the same user on the same Mac, or until now if there's none yet. One\nthat crosses midnight counts towards each day for its part in that day. Time on two Macs\nat once counts twice.\nWorks with the Altiward agent's events and altiward-forwarder's. The forwarder's records\nhave no session ID and can't show rights kept past their expiry, so its elevations count\nup to their expiry at most. Admin rights Privileges didn't grant aren't counted: the\nout-of-band rule reports those.\n",
+        "severity": "Low",
+        "enabled": true,
+        "query": "// The limit: minutes of admin rights per user per UTC day. Your AdminBudget, to match it.\nlet MaxAdminMinutes = 120;\nlet DayEnd = startofday(now());\nlet DayStart = DayEnd - 1d;\nAltiwardOCSF_CL\n| where ClassUid == 3005 and ActivityId in (1, 2) and toint(Ocsf.status_id) == 1\n| extend DeviceUid = tostring(Ocsf.device.uid)\n| sort by DeviceUid asc, UserName asc, TimeGenerated asc\n| extend End = iff(next(DeviceUid) == DeviceUid and next(UserName) == UserName,\n    next(TimeGenerated), now())\n| where ActivityId == 1\n| extend Expires = unixtime_milliseconds_todatetime(tolong(Ocsf.unmapped.altiward.expires_time))\n| extend End = iff(tostring(Ocsf.metadata.product.name) == \"Altiward Forwarder\" and isnotnull(Expires),\n    min_of(End, Expires), End)\n| extend Minutes = (min_of(End, DayEnd) - max_of(TimeGenerated, DayStart)) / 1m\n| where Minutes > 0\n| summarize AdminMinutes = round(sum(Minutes)), Elevations = count(),\n    Macs = make_set(coalesce(DeviceSerial, DeviceUid)) by UserName, Day = DayStart\n| where AdminMinutes > MaxAdminMinutes\n",
+        "queryFrequency": "P1D",
+        "queryPeriod": "P3D",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "PrivilegeEscalation"
+        ],
+        "techniques": [
+          "T1078"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "identifier": "Name",
+                "columnName": "UserName"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
       "name": "b5d482eb-1171-4a83-88d2-4de9df7ad23b",
       "kind": "Scheduled",
       "properties": {
