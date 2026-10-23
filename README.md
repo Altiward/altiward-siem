@@ -53,7 +53,7 @@ describes (altiward-forwarder uses the same table). Rules can't be created befor
 
 ### All analytics rules at once (preview)
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAltiward%2Faltiward-siem%2Fv0.1.0%2Fsentinel%2Fazuredeploy.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAltiward%2Faltiward-siem%2Fv0.2.0%2Fsentinel%2Fazuredeploy.json)
 
 Choose the resource group of your Sentinel workspace and enter the workspace's name. It
 creates the rules turned on, with one alert per result row. The button deploys
