@@ -9,6 +9,21 @@ renamed rule or search is a breaking change, called out under `### Breaking chan
 each new or changed detection whose events it needs: Altiward, or both Altiward and
 altiward-forwarder.
 
+## 0.4.0 - unreleased
+
+### Changes
+
+- A hunting query for the use of permanent admin accounts, for Sentinel and Splunk: each
+  sign-in at the Mac (at the login window, in Terminal or over SSH), each authorisation prompt
+  approved and each screen sharing connection as an account that is always an administrator,
+  over the last 30 days. sudo, su and SSH file copies or one-off commands are not recorded
+  until Apple grants the Endpoint Security entitlement. It lists the
+  Mac, the account, how it was used, whose session it was and when it started and ended. It
+  is for review, not an alert. Needs Altiward server 0.4.0 and agent 0.3.0.
+- The console sign-ins hunting query for Sentinel now counts only sign-ins to the Altiward
+  console, as the Splunk search already did. Before, it would also list Mac sign-ins from the
+  new permanent admin use records.
+
 ## 0.3.0 - 2026-10-24
 
 ### Changes
