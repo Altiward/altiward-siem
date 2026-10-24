@@ -1,0 +1,132 @@
+name: Azure deploy check
+
+# Deploys the Deploy to Azure template (sentinel/azuredeploy.json) into a new Sentinel
+# workspace in a test resource group, checks that every analytics rule was created and
+# turned on, then deletes everything it made. The workspace is set up as the README asks
+# first: Sentinel on, and the AltiwardOCSF_CL table with the columns Altiward's Sentinel
+# guide gives it. It runs after each release, deploying the template from GitHub at the
+# commit the release built, as the button does, and by hand with a release tag or on main.
+#
+# Never on pull requests: it signs in to Azure. The azure-test environment holds only IDs
+# (AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID); the sign-in is GitHub OIDC
+# with no secret. That identity has Contributor on rg-altiward-deploycheck only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "A vX.Y.Z release tag to deploy; empty deploys main's template"
+        required: false
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: azure-deploy-check
+
+jobs:
+  check:
+    name: Deploy, check and delete
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: azure-test
+    permissions:
+      contents: read
+      id-token: write # the Azure sign-in
+    env:
+      RG: rg-altiward-deploycheck
+    steps:
+      - name: A release tag, if one was given
+        if: inputs.tag != ''
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Not a release tag: $TAG"; exit 1; }
+
+      # After a release, the commit it built, never a name that could have moved since; by
+      # hand, the tag given or main.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || inputs.tag || github.sha }}
+
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: A Sentinel workspace with the AltiwardOCSF_CL table
+        id: workspace
+        run: |
+          # A new name each time, re-runs too. Every resource it makes has the prefix in its
+          # name, which is how the last step finds anything left behind.
+          prefix="chk$(openssl rand -hex 4)"
+          law="$prefix-law"
+          echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
+          echo "law=$law" >> "$GITHUB_OUTPUT"
+          az monitor log-analytics workspace create --resource-group "$RG" --workspace-name "$law" \
+            --retention-time 30 --output none
+          az rest --method put --output none \
+            --url "https://management.azure.com/subscriptions/$(az account show --query id -o tsv)/resourceGroups/$RG/providers/Microsoft.OperationalInsights/workspaces/$law/providers/Microsoft.SecurityInsights/onboardingStates/default?api-version=2024-09-01" \
+            --body '{"properties": {}}'
+          # The columns Altiward's Sentinel guide creates the table with.
+          az monitor log-analytics workspace table create --resource-group "$RG" --workspace-name "$law" \
+            --name AltiwardOCSF_CL --output none \
+            --columns TimeGenerated=datetime EventUid=string TenantUid=string SessionUid=string \
+              ClassUid=int ActivityId=int SeverityId=int DeviceSerial=string UserName=string Message=string \
+              Ocsf=dynamic
+
+      - name: Deploy the rules from GitHub, as the button does
+        env:
+          PREFIX: ${{ steps.workspace.outputs.prefix }}
+          LAW: ${{ steps.workspace.outputs.law }}
+        run: |
+          template="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$(git rev-parse HEAD)/sentinel/azuredeploy.json"
+          # Sentinel checks each rule's query against the table, which a new table can take a
+          # few minutes to allow.
+          for _ in $(seq 1 10); do
+            az deployment group create --resource-group "$RG" --name "$PREFIX-rules" --template-uri "$template" \
+              --parameters workspace="$LAW" --output none && exit 0
+            sleep 60
+          done
+          echo "::error::The rules never deployed into $LAW"
+          exit 1
+
+      - name: Every rule is there and turned on
+        env:
+          LAW: ${{ steps.workspace.outputs.law }}
+        run: |
+          want=$(jq -r '.resources[] | select(.type == "Microsoft.SecurityInsights/alertRules") | .name' \
+            sentinel/azuredeploy.json | sort)
+          rules=$(az rest --method get \
+            --url "https://management.azure.com/subscriptions/$(az account show --query id -o tsv)/resourceGroups/$RG/providers/Microsoft.OperationalInsights/workspaces/$LAW/providers/Microsoft.SecurityInsights/alertRules?api-version=2024-09-01")
+          got=$(jq -r '.value[] | select(.properties.enabled == true) | .name' <<<"$rules" | sort)
+          # Sentinel turns on its own built-in rules, such as Fusion, so only the template's count.
+          missing=$(comm -23 <(echo "$want") <(echo "$got"))
+          [ -z "$missing" ] || { echo "::error::Missing or turned off in $LAW: $missing"; exit 1; }
+          echo "ok - $(wc -l <<<"$want" | tr -d ' ') rules, all turned on"
+
+      - name: Delete everything it made
+        if: always() && steps.workspace.outputs.prefix != ''
+        env:
+          PREFIX: ${{ steps.workspace.outputs.prefix }}
+          LAW: ${{ steps.workspace.outputs.law }}
+        run: |
+          # Deleting the workspace deletes its rules and table. --force skips the 14 days a
+          # deleted workspace is otherwise kept.
+          az monitor log-analytics workspace delete --resource-group "$RG" --workspace-name "$LAW" \
+            --force true --yes || true
+          az deployment group delete --resource-group "$RG" --name "$PREFIX-rules" || true
+          # Anything left: turning Sentinel on made a solution, SecurityInsights(<workspace>),
+          # which outlives the workspace.
+          left=$(az resource list --resource-group "$RG" --query "[?contains(name, '$PREFIX')].id" -o tsv)
+          if [ -n "$left" ]; then
+            # shellcheck disable=SC2086 # one ID each
+            az resource delete --ids $left --output none || true
+            left=$(az resource list --resource-group "$RG" --query "[?contains(name, '$PREFIX')].id" -o tsv)
+          fi
+          [ -z "$left" ] || { echo "::error::Left in $RG: $left"; exit 1; }
