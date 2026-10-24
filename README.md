@@ -51,7 +51,7 @@ First set up the `AltiwardOCSF_CL` table as
 [Altiward's Sentinel guide](https://github.com/Altiward/altiward/tree/main/integrations/sentinel)
 describes (altiward-forwarder uses the same table). Rules can't be created before it exists.
 
-### All analytics rules at once (preview)
+### All analytics rules at once
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAltiward%2Faltiward-siem%2Fv0.2.0%2Fsentinel%2Fazuredeploy.json)
 
