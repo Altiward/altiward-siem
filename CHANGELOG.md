@@ -9,6 +9,17 @@ renamed rule or search is a breaking change, called out under `### Breaking chan
 each new or changed detection whose events it needs: Altiward, or both Altiward and
 altiward-forwarder.
 
+## 0.3.0 - unreleased
+
+### Changes
+
+- The out-of-band detections keep alerting when Altiward server 0.3.0 closes a finding
+  because the rights were removed: by Altiward's automatic removal, a revoke from the
+  console, or by hand (status "Rights removed"). Such a finding alerts once, in the hour it
+  was created. An explanation (the account made a permanent admin, or a Privileges grant)
+  still closes it without an alert. On older servers' events the detections work as before.
+  Needs Altiward's events.
+
 ## 0.2.0 - 2026-10-23
 
 ### Changes

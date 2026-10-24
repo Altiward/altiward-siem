@@ -68,10 +68,10 @@
       "kind": "Scheduled",
       "properties": {
         "displayName": "Altiward: admin rights SAP Privileges didn't grant",
-        "description": "An account on a Mac became an admin without SAP Privileges granting it, and nothing has\nexplained it yet. Making the account a permanent admin in Altiward closes the finding\n(the same finding_info.uid with ActivityId 3), so only unexplained ones alert.\n",
+        "description": "An account on a Mac became an admin without SAP Privileges granting it, and nothing has\nexplained it yet. Making the account a permanent admin in Altiward, or a Privileges grant,\nexplains it and closes the finding (the same finding_info.uid with ActivityId 3), so those\ndon't alert. Removing the rights (Altiward's automatic removal, a revoke from the console,\nor by hand) closes the finding too, with status \"Rights removed\", but still alerts once:\nthe rights were held, and nothing explained them.\n",
         "severity": "High",
         "enabled": true,
-        "query": "AltiwardOCSF_CL\n| where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == \"altiward.admin_out_of_band\"\n| summarize arg_max(TimeGenerated, ActivityId, UserName, Message) by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial\n| where ActivityId == 1\n",
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == \"altiward.admin_out_of_band\"\n| extend Status = tostring(Ocsf.status)\n| summarize Created = countif(ActivityId == 1), arg_max(TimeGenerated, ActivityId, Status, UserName, Message)\n    by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial\n| where Created > 0 and (ActivityId == 1 or Status == \"Rights removed\")\n",
         "queryFrequency": "PT1H",
         "queryPeriod": "PT1H",
         "triggerOperator": "GreaterThan",
@@ -109,7 +109,7 @@
         "eventGroupingSettings": {
           "aggregationKind": "AlertPerResult"
         },
-        "templateVersion": "1.0.0"
+        "templateVersion": "1.1.0"
       }
     },
     {

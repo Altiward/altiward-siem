@@ -1,3 +1,3 @@
 sourcetype="altiward:ocsf" class_uid=2004 finding_info.analytic.name="altiward.admin_out_of_band"
-| stats latest(activity_name) as last latest(_time) as _time latest(user.name) as user latest(message) as message by finding_info.uid host
-| where last="Create"
+| stats values(activity_name) as acts latest(activity_name) as last latest(status) as status latest(_time) as _time latest(user.name) as user latest(message) as message by finding_info.uid host
+| where isnotnull(mvfind(acts, "^Create$")) AND (last="Create" OR status="Rights removed")
