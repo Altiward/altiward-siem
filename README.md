@@ -39,7 +39,8 @@ means it also works with altiward-forwarder's records, which are grants and revo
 Sentinel rules run every hour over the last hour (the elevation count: daily over 7 days;
 admin time per day: daily, for the last complete UTC day).
 Rules about findings that can be resolved (unexplained admin rights, tamper checks, silent
-Macs) alert only on findings still open at the end of that hour.
+Macs) alert only on findings still open at the end of that hour. One exception: an
+unexplained-admin-rights finding closed because the rights were removed still alerts once.
 
 Altiward-forwarder's webhook events name the Mac by `device.uid` only, so `DeviceSerial`
 (Sentinel) is empty for them and Splunk's `host` is the hardware UUID. Its on-Mac hook
