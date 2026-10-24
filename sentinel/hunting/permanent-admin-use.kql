@@ -1,0 +1,23 @@
+// Use of permanent admin accounts in the last 30 days: someone signed in to (at the Mac, in
+// Terminal or over SSH), approved an authorisation prompt as, or used screen sharing as an
+// account that is always an administrator. A sign-in's start and end are one row (Ended is
+// empty while it is open); a prompt or a screen sharing connection is a row of its own, with
+// OnSessionOf the user whose session it was, if known. sudo, su and SSH file copies or
+// one-off commands are not recorded until Apple grants the Endpoint Security entitlement.
+// These are evidence for review, not alerts. Altiward records them from macOS's own logs, which
+// an administrator can erase.
+// Tags: altiward
+AltiwardOCSF_CL
+| where ClassUid == 3002 and TimeGenerated > ago(30d)
+    and tostring(Ocsf.unmapped.altiward.event_type) == "admin.permanent_use"
+| extend UseId = tostring(Ocsf.metadata.correlation_uid),
+    Method = tostring(Ocsf.unmapped.altiward.detail.method),
+    OnSessionOf = tostring(Ocsf.unmapped.altiward.detail.on_session_of),
+    StartTime = unixtime_milliseconds_todatetime(tolong(Ocsf.start_time)),
+    EndTime = unixtime_milliseconds_todatetime(tolong(Ocsf.end_time))
+| summarize Started = min(StartTime), Ended = max(EndTime),
+    Method = take_anyif(Method, isnotempty(Method)),
+    OnSessionOf = take_anyif(OnSessionOf, isnotempty(OnSessionOf)),
+    arg_max(TimeGenerated, Message) by UseId, DeviceSerial, UserName
+| project Started, Ended, DeviceSerial, UserName, Method, OnSessionOf, Message, UseId
+| order by Started desc

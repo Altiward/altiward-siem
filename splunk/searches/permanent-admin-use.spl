@@ -1,0 +1,5 @@
+sourcetype="altiward:ocsf" class_uid=3002 unmapped.altiward.event_type="admin.permanent_use" earliest=-30d
+| stats min(start_time) as started max(end_time) as ended values(unmapped.altiward.detail.method) as method values(unmapped.altiward.detail.on_session_of) as on_session_of latest(message) as message by metadata.correlation_uid host user.name
+| sort 0 - started
+| eval started=strftime(started/1000, "%Y-%m-%d %H:%M:%S"), ended=strftime(ended/1000, "%Y-%m-%d %H:%M:%S")
+| table started ended host user.name method on_session_of message metadata.correlation_uid

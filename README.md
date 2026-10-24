@@ -35,6 +35,7 @@ means it also works with altiward-forwarder's records, which are grants and revo
 | Elevations, with reason, expiry and who reported them | Both | [hunting](sentinel/hunting/elevations.kql) | [report](splunk/searches/elevations.spl) |
 | Console actions: revokes, enrollment approvals, settings changes | Altiward | [hunting](sentinel/hunting/console-actions.kql) | [report](splunk/searches/console-actions.spl) |
 | Console sign-ins and sign-outs | Altiward | [hunting](sentinel/hunting/console-sign-ins.kql) | [report](splunk/searches/console-sign-ins.spl) |
+| Use of permanent admin accounts: sign-ins, authorisation prompts and screen sharing | Altiward | [hunting](sentinel/hunting/permanent-admin-use.kql) | [report](splunk/searches/permanent-admin-use.spl) |
 
 Sentinel rules run every hour over the last hour (the elevation count: daily over 7 days;
 admin time per day: daily, for the last complete UTC day).
