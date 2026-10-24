@@ -57,7 +57,7 @@ describes (altiward-forwarder uses the same table). Rules can't be created befor
 
 Choose the resource group of your Sentinel workspace and enter the workspace's name. It
 creates the rules turned on, with one alert per result row. The button deploys
-[`sentinel/azuredeploy.json`](sentinel/azuredeploy.json) from the `v0.1.0` release.
+[`sentinel/azuredeploy.json`](sentinel/azuredeploy.json) from the `v0.2.0` release.
 
 ### One rule at a time
 

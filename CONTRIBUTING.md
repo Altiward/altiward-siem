@@ -46,8 +46,11 @@ make lint test check
 ```
 
 Add a line to [CHANGELOG.md](CHANGELOG.md) under the coming release, saying what the
-detection catches and whose events it needs. A maintainer releases by dating that section
-and pushing a `vX.Y.Z` tag; `.github/workflows/release.yml` publishes the release.
+detection catches and whose events it needs. A maintainer releases by dating that section,
+moving the README's Deploy to Azure button (its link and the version named under it) to the
+new tag, and pushing a `vX.Y.Z` tag; `.github/workflows/release.yml` publishes the release,
+and `.github/workflows/azure-deploy-check.yml` then deploys its template into a new Sentinel
+workspace, checks every rule was created and turned on, and deletes the workspace.
 
 ## What the checks look at
 
