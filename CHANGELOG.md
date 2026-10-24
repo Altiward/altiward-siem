@@ -9,7 +9,7 @@ renamed rule or search is a breaking change, called out under `### Breaking chan
 each new or changed detection whose events it needs: Altiward, or both Altiward and
 altiward-forwarder.
 
-## 0.4.0 - unreleased
+## 0.4.0 - 2026-10-24
 
 ### Changes
 
