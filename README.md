@@ -25,6 +25,7 @@ means it also works with altiward-forwarder's records, which are grants and revo
 | Admin rights SAP Privileges didn't grant, still unexplained | Altiward | [rule](sentinel/analytics-rules/admin-out-of-band.yaml) | [alert](splunk/searches/admin-rights-not-granted-by-sap-privileges.spl) |
 | Admin rights that outlived their expiry | Altiward | [rule](sentinel/analytics-rules/rights-after-expiry.yaml) | [alert](splunk/searches/admin-rights-after-expiry.spl) |
 | A tamper check failing on a Mac | Altiward | [rule](sentinel/analytics-rules/tamper.yaml) | [alert](splunk/searches/tamper-checks-failing.spl) |
+| A SAP Privileges grant claim the agent refused or Privileges' log didn't confirm | Altiward | [rule](sentinel/analytics-rules/grant-claim.yaml) | [alert](splunk/searches/grant-claims-refused-or-not-confirmed.spl) |
 | Persistence that appeared while someone was admin | Altiward | [rule](sentinel/analytics-rules/persistence-while-admin.yaml) | [alert](splunk/searches/persistence-while-admin.spl) |
 | A local account that appeared while someone was admin | Altiward | [rule](sentinel/analytics-rules/account-created.yaml) | [alert](splunk/searches/local-account-created-while-admin.spl) |
 | A Mac that stopped checking in | Altiward | [rule](sentinel/analytics-rules/agent-silent.yaml) | [alert](splunk/searches/macs-that-stopped-checking-in.spl) |
@@ -37,8 +38,8 @@ means it also works with altiward-forwarder's records, which are grants and revo
 | Console sign-ins and sign-outs | Altiward | [hunting](sentinel/hunting/console-sign-ins.kql) | [report](splunk/searches/console-sign-ins.spl) |
 | Use of permanent admin accounts: sign-ins, authorisation prompts and screen sharing | Altiward | [hunting](sentinel/hunting/permanent-admin-use.kql) | [report](splunk/searches/permanent-admin-use.spl) |
 
-Sentinel rules run every hour over the last hour (the elevation count: daily over 7 days;
-admin time per day: daily, for the last complete UTC day).
+Sentinel rules run every hour over the last hour (grant claims: every 15 minutes; the
+elevation count: daily over 7 days; admin time per day: daily, for the last complete UTC day).
 Rules about findings that can be resolved (unexplained admin rights, tamper checks, silent
 Macs) alert only on findings still open at the end of that hour. One exception: an
 unexplained-admin-rights finding closed because the rights were removed still alerts once.
@@ -76,7 +77,8 @@ hunting query.
 ## Splunk
 
 [`splunk/savedsearches.conf`](splunk/savedsearches.conf) has every search as a saved search:
-alerts that run hourly (the elevation count and admin time per day: daily) and reports. Copy
+alerts that run hourly (grant claims: every 15 minutes; the elevation count and admin time
+per day: daily) and reports. Copy
 it to `$SPLUNK_HOME/etc/apps/<your app>/local/savedsearches.conf` and restart Splunk. The
 searches are off until you enable them in Settings, Searches, reports, and alerts, where you
 also add the alert action you want (email, a webhook, your SOAR).

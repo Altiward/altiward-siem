@@ -9,6 +9,19 @@ renamed rule or search is a breaking change, called out under `### Breaking chan
 each new or changed detection whose events it needs: Altiward, or both Altiward and
 altiward-forwarder.
 
+## 0.5.0 - unreleased
+
+### Changes
+
+- A detection for SAP Privileges grant claims, for Sentinel and Splunk: a claim from
+  Privileges' hook that the Altiward agent refused, or accepted without Privileges' own log
+  backing it (`altiward.tamper.grant_claim`). Someone who already holds admin rights can run
+  the hook by hand to make them look granted, so it alerts at High, every 15 minutes, with the
+  account, what was claimed (grant, renewal or give-back), the outcome and the reason. Needs
+  Altiward server 0.5.0 and agent 0.4.0.
+- "A tamper check is failing" leaves grant claims out, so they don't alert twice. Before, it
+  alerted on them at Medium, at the end of the hour.
+
 ## 0.4.0 - 2026-10-24
 
 ### Changes

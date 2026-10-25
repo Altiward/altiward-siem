@@ -1,0 +1,2 @@
+sourcetype="altiward:ocsf" class_uid=2004 finding_info.analytic.name="altiward.tamper.grant_claim"
+| table _time host unmapped.altiward.detail.user unmapped.altiward.detail.kind unmapped.altiward.detail.outcome unmapped.altiward.detail.reason unmapped.altiward.detail.caller_uid message

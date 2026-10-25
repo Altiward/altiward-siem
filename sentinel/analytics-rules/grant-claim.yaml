@@ -1,0 +1,40 @@
+id: 8edd5c2e-28eb-4088-acbd-b324ccf0790a
+name: "Altiward: a SAP Privileges grant claim was refused or not confirmed"
+description: |
+  The Altiward agent refused a claim from SAP Privileges' hook, or accepted one that
+  Privileges' own log doesn't back. Someone who already holds admin rights can run the hook
+  by hand to make those rights look granted, or to keep a Privileges session going, so this
+  is an attack signal, not a misconfiguration. Kind says what was claimed (grant, renewal or
+  give_back), Outcome whether it was refused or accepted_unconfirmed, and Reason why.
+  CallerUid is the UID of the process that sent the claim. Needs Altiward agent 0.4.0.
+severity: High
+requiredDataConnectors: []
+queryFrequency: 15m
+queryPeriod: 15m
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - DefenseEvasion
+  - PrivilegeEscalation
+relevantTechniques:
+  - T1548
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == "altiward.tamper.grant_claim"
+  | extend Account = tostring(Ocsf.unmapped.altiward.detail.user), Kind = tostring(Ocsf.unmapped.altiward.detail.kind),
+      Outcome = tostring(Ocsf.unmapped.altiward.detail.outcome), Reason = tostring(Ocsf.unmapped.altiward.detail.reason),
+      CallerUid = toint(Ocsf.unmapped.altiward.detail.caller_uid)
+  | project TimeGenerated, DeviceSerial, Account, Kind, Outcome, Reason, CallerUid, Message
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceSerial
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: Account
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled

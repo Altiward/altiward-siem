@@ -3,7 +3,9 @@ name: "Altiward: a tamper check is failing"
 description: |
   One of the Altiward agent's integrity checks failed on a Mac, such as SAP Privileges'
   settings no longer being managed. A failure and its fix share finding_info.uid, so only
-  checks still failing at the end of the hour alert.
+  checks still failing at the end of the hour alert. A refused or unconfirmed grant claim
+  (altiward.tamper.grant_claim) is left out: "a SAP Privileges grant claim was refused or
+  not confirmed" alerts on it sooner, at High.
 severity: Medium
 requiredDataConnectors: []
 queryFrequency: 1h
@@ -17,6 +19,7 @@ relevantTechniques:
 query: |
   AltiwardOCSF_CL
   | where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) startswith "altiward.tamper."
+      and tostring(Ocsf.finding_info.analytic.name) != "altiward.tamper.grant_claim"
   | summarize arg_max(TimeGenerated, ActivityId, SeverityId, Message) by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial
   | where ActivityId == 1
 entityMappings:
@@ -26,5 +29,5 @@ entityMappings:
         columnName: DeviceSerial
 tags:
   - altiward
-version: 1.0.0
+version: 1.1.0
 kind: Scheduled
