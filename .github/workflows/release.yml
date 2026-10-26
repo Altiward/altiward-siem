@@ -40,3 +40,18 @@ jobs:
         run: |
           gh release create "$TAG" sentinel/azuredeploy.json \
             --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/RELEASE_NOTES.md"
+
+  # Starts the Azure deploy check for this release, on main with the tag as its input, so
+  # the azure-test environment (main only) is the one place the Azure sign-in can run.
+  azure-deploy-check:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write # start a workflow_dispatch run
+    steps:
+      - name: Start the Azure deploy check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: gh workflow run azure-deploy-check.yml --ref main -f tag="$TAG"

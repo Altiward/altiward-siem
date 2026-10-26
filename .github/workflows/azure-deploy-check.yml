@@ -4,8 +4,9 @@ name: Azure deploy check
 # workspace in a test resource group, checks that every analytics rule was created and
 # turned on, then deletes everything it made. The workspace is set up as the README asks
 # first: Sentinel on, and the AltiwardOCSF_CL table with the columns Altiward's Sentinel
-# guide gives it. It runs after each release, deploying the template from GitHub at the
-# commit the release built, as the button does, and by hand with a release tag or on main.
+# guide gives it. Release starts it on main with the release's tag once each release is
+# published, deploying the template from GitHub at that tag, as the button does; it also
+# runs by hand with a release tag or on main.
 #
 # Never on pull requests: it signs in to Azure. The azure-test environment holds only IDs
 # (AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID); the sign-in is GitHub OIDC
@@ -17,9 +18,6 @@ on:
       tag:
         description: "A vX.Y.Z release tag to deploy; empty deploys main's template"
         required: false
-  workflow_run:
-    workflows: [Release]
-    types: [completed]
 
 permissions:
   contents: read
@@ -30,7 +28,6 @@ concurrency:
 jobs:
   check:
     name: Deploy, check and delete
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: azure-test
@@ -47,11 +44,10 @@ jobs:
         run: |
           [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Not a release tag: $TAG"; exit 1; }
 
-      # After a release, the commit it built, never a name that could have moved since; by
-      # hand, the tag given or main.
+      # The release tag given, which can't move (release tags are protected), or main.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.workflow_run.head_sha || inputs.tag || github.sha }}
+          ref: ${{ inputs.tag || github.sha }}
 
       - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
