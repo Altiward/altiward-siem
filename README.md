@@ -10,7 +10,8 @@ here reads those records in Sentinel's `AltiwardOCSF_CL` table and Splunk's `alt
 sourcetype, the way the Altiward setup creates them. CI checks every field a rule or search
 names against example records from both projects.
 
-**Status:** 0.1.0, the first release. Pin a release, and watch the repository's releases to
+**Status:** 0.4.0 is the latest release. The changes for 0.9.0 are in
+[CHANGELOG.md](CHANGELOG.md). Pin a release, and watch the repository's releases to
 hear when rules are added or changed: each release's notes, also in
 [CHANGELOG.md](CHANGELOG.md), say what changed and whose events it needs.
 
@@ -26,6 +27,9 @@ means it also works with altiward-forwarder's records, which are grants and revo
 | Admin rights that outlived their expiry | Altiward | [rule](sentinel/analytics-rules/rights-after-expiry.yaml) | [alert](splunk/searches/admin-rights-after-expiry.spl) |
 | A tamper check failing on a Mac | Altiward | [rule](sentinel/analytics-rules/tamper.yaml) | [alert](splunk/searches/tamper-checks-failing.spl) |
 | A SAP Privileges grant claim the agent refused or Privileges' log didn't confirm | Altiward | [rule](sentinel/analytics-rules/grant-claim.yaml) | [alert](splunk/searches/grant-claims-refused-or-not-confirmed.spl) |
+| A device key replaced without approval | Altiward | [rule](sentinel/analytics-rules/device-key-replaced-without-approval.yaml) | [alert](splunk/searches/device-key-replaced-without-approval.spl) |
+| A device key waiting for approval | Altiward | [rule](sentinel/analytics-rules/device-key-waiting-for-approval.yaml) | [alert](splunk/searches/device-key-waiting-for-approval.spl) |
+| Bursts of new Macs enrolled with one token | Altiward | [hunting](sentinel/hunting/enrolment-bursts.kql) | [report](splunk/searches/enrolment-bursts.spl) |
 | Persistence that appeared while someone was admin | Altiward | [rule](sentinel/analytics-rules/persistence-while-admin.yaml) | [alert](splunk/searches/persistence-while-admin.spl) |
 | A local account that appeared while someone was admin | Altiward | [rule](sentinel/analytics-rules/account-created.yaml) | [alert](splunk/searches/local-account-created-while-admin.spl) |
 | A Mac that stopped checking in | Altiward | [rule](sentinel/analytics-rules/agent-silent.yaml) | [alert](splunk/searches/macs-that-stopped-checking-in.spl) |
@@ -38,11 +42,18 @@ means it also works with altiward-forwarder's records, which are grants and revo
 | Console sign-ins and sign-outs | Altiward | [hunting](sentinel/hunting/console-sign-ins.kql) | [report](splunk/searches/console-sign-ins.spl) |
 | Use of permanent admin accounts: sign-ins, authorisation prompts and screen sharing | Altiward | [hunting](sentinel/hunting/permanent-admin-use.kql) | [report](splunk/searches/permanent-admin-use.spl) |
 
-Sentinel rules run every hour over the last hour (grant claims: every 15 minutes; the
+Sentinel rules run every hour over the last hour (grant claims and device keys: every 15 minutes; the
 elevation count: daily over 7 days; admin time per day: daily, for the last complete UTC day).
 Rules about findings that can be resolved (unexplained admin rights, tamper checks, silent
 Macs) alert only on findings still open at the end of that hour. One exception: an
 unexplained-admin-rights finding closed because the rights were removed still alerts once.
+
+The device-key detections and enrolment-burst reports need Altiward server 0.8.0.
+A pending key is Medium and needs checking against the Mac's last check-in, the reported
+hardware UUID comparison and its owner's expectations. A key replaced with approval off
+is High. Bursts count distinct claimed serials per tenant and token over an hour, with a
+tunable threshold of 10. Normal rollouts can produce bursts too; compare independent
+inventory, because a shared enrolment token can enrol invented serials.
 
 Altiward-forwarder's webhook events name the Mac by `device.uid` only, so `DeviceSerial`
 (Sentinel) is empty for them and Splunk's `host` is the hardware UUID. Its on-Mac hook
@@ -77,7 +88,7 @@ hunting query.
 ## Splunk
 
 [`splunk/savedsearches.conf`](splunk/savedsearches.conf) has every search as a saved search:
-alerts that run hourly (grant claims: every 15 minutes; the elevation count and admin time
+alerts that run hourly (grant claims and device keys: every 15 minutes; the elevation count and admin time
 per day: daily) and reports. Copy
 it to `$SPLUNK_HOME/etc/apps/<your app>/local/savedsearches.conf` and restart Splunk. The
 searches are off until you enable them in Settings, Searches, reports, and alerts, where you

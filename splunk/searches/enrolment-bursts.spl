@@ -1,0 +1,5 @@
+sourcetype="altiward:ocsf" class_uid=6003 unmapped.altiward.event_type="agent.enrollment" unmapped.altiward.detail.state="enrolled" unmapped.altiward.detail.token="*" earliest=-1h
+| stats min(_time) as first_seen max(_time) as last_seen dc(device.hw_info.serial_number) as new_macs values(device.hw_info.serial_number) as macs by metadata.tenant_uid unmapped.altiward.detail.token
+| eval min_new_macs=10
+| where new_macs >= min_new_macs
+| sort 0 - new_macs

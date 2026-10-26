@@ -1,0 +1,2 @@
+sourcetype="altiward:ocsf" class_uid=6003 unmapped.altiward.event_type="agent.enrollment" unmapped.altiward.detail.state="replaced"
+| table _time metadata.tenant_uid host actor.user.name unmapped.altiward.detail.device_id unmapped.altiward.detail.previous_device_id unmapped.altiward.detail.hardware_uuid_matches unmapped.altiward.detail.key_storage message

@@ -3,6 +3,6 @@
 // console token's fingerprint) and DeviceSerial the Mac acted on, if any.
 // Tags: altiward
 AltiwardOCSF_CL
-| where ClassUid == 6003
+| where ClassUid == 6003 and tostring(Ocsf.api.service.name) == "Altiward console"
 | project TimeGenerated, UserName, Action = tostring(Ocsf.api.operation), DeviceSerial, Message
 | order by TimeGenerated desc

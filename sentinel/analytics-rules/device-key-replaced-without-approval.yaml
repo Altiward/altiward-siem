@@ -1,0 +1,36 @@
+id: f53ff1ec-4616-4ad9-ab9a-f8879c298f47
+name: "Altiward: a device key was replaced without approval"
+description: |
+  A new key replaced a Mac's active key without approval. This only happens when
+  re-enrolment approval is off. Check whether the owner expected the reinstall or key
+  change and compare independent inventory. If unexpected, revoke the new key, enable
+  approval and rotate the enrolment token. Hardware UUIDs are client claims.
+  Needs Altiward server 0.8.0.
+severity: High
+requiredDataConnectors: []
+queryFrequency: 15m
+queryPeriod: 15m
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - DefenseEvasion
+relevantTechniques:
+  - T1078
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 6003 and tostring(Ocsf.unmapped.altiward.event_type) == "agent.enrollment"
+      and tostring(Ocsf.unmapped.altiward.detail.state) == "replaced"
+  | extend Token = tostring(Ocsf.actor.user.name), DeviceId = tostring(Ocsf.unmapped.altiward.detail.device_id),
+      PreviousDeviceId = tostring(Ocsf.unmapped.altiward.detail.previous_device_id),
+      HardwareUuidMatches = tostring(Ocsf.unmapped.altiward.detail.hardware_uuid_matches),
+      KeyStorage = tostring(Ocsf.unmapped.altiward.detail.key_storage)
+  | project TimeGenerated, TenantUid, DeviceSerial, Token, DeviceId, PreviousDeviceId, HardwareUuidMatches, KeyStorage, Message
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceSerial
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled

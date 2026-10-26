@@ -1,2 +1,2 @@
-sourcetype="altiward:ocsf" class_uid=6003
+sourcetype="altiward:ocsf" class_uid=6003 api.service.name="Altiward console"
 | table _time actor.user.name api.operation message

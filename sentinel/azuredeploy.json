@@ -291,6 +291,88 @@
       "type": "Microsoft.SecurityInsights/alertRules",
       "apiVersion": "2024-09-01",
       "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "f53ff1ec-4616-4ad9-ab9a-f8879c298f47",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: a device key was replaced without approval",
+        "description": "A new key replaced a Mac's active key without approval. This only happens when\nre-enrolment approval is off. Check whether the owner expected the reinstall or key\nchange and compare independent inventory. If unexpected, revoke the new key, enable\napproval and rotate the enrolment token. Hardware UUIDs are client claims.\nNeeds Altiward server 0.8.0.\n",
+        "severity": "High",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 6003 and tostring(Ocsf.unmapped.altiward.event_type) == \"agent.enrollment\"\n    and tostring(Ocsf.unmapped.altiward.detail.state) == \"replaced\"\n| extend Token = tostring(Ocsf.actor.user.name), DeviceId = tostring(Ocsf.unmapped.altiward.detail.device_id),\n    PreviousDeviceId = tostring(Ocsf.unmapped.altiward.detail.previous_device_id),\n    HardwareUuidMatches = tostring(Ocsf.unmapped.altiward.detail.hardware_uuid_matches),\n    KeyStorage = tostring(Ocsf.unmapped.altiward.detail.key_storage)\n| project TimeGenerated, TenantUid, DeviceSerial, Token, DeviceId, PreviousDeviceId, HardwareUuidMatches, KeyStorage, Message\n",
+        "queryFrequency": "PT15M",
+        "queryPeriod": "PT15M",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "DefenseEvasion"
+        ],
+        "techniques": [
+          "T1078"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Host",
+            "fieldMappings": [
+              {
+                "identifier": "HostName",
+                "columnName": "DeviceSerial"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "57b39ce0-f1c9-40cb-929d-3ee9e363cf7b",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: a device key is waiting for approval",
+        "description": "A new key is waiting for approval. This can be normal after a reinstall. Before\napproving, check the Mac's last check-in in Altiward, HardwareUuidMatches and whether\nits owner expects the change. An empty HardwareUuidMatches means there was no active\nkey to compare. Hardware UUIDs are client claims, not proof of the Mac's identity.\nNeeds Altiward server 0.8.0.\n",
+        "severity": "Medium",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 6003 and tostring(Ocsf.unmapped.altiward.event_type) == \"agent.enrollment\"\n    and tostring(Ocsf.unmapped.altiward.detail.state) == \"pending\"\n| extend Token = tostring(Ocsf.actor.user.name), DeviceId = tostring(Ocsf.unmapped.altiward.detail.device_id),\n    PreviousDeviceId = tostring(Ocsf.unmapped.altiward.detail.previous_device_id),\n    HardwareUuidMatches = tostring(Ocsf.unmapped.altiward.detail.hardware_uuid_matches),\n    KeyStorage = tostring(Ocsf.unmapped.altiward.detail.key_storage)\n| project TimeGenerated, TenantUid, DeviceSerial, Token, DeviceId, PreviousDeviceId, HardwareUuidMatches, KeyStorage, Message\n",
+        "queryFrequency": "PT15M",
+        "queryPeriod": "PT15M",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "DefenseEvasion"
+        ],
+        "techniques": [
+          "T1078"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Host",
+            "fieldMappings": [
+              {
+                "identifier": "HostName",
+                "columnName": "DeviceSerial"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
       "name": "0189bbb2-3420-4ccf-b637-a2bcb3a79a94",
       "kind": "Scheduled",
       "properties": {

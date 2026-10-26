@@ -1,0 +1,16 @@
+// Successful enrolments of at least 10 distinct claimed serials from one token in the
+// last hour. Tune MinNewMacs to your rollout. Invented serials can consume the allowance;
+// check independent inventory and rotate an unexpected token. Exact retries do not add
+// Macs to the count. Token is a fingerprint, not the secret. Needs Altiward server 0.8.0.
+// Tags: altiward
+let MinNewMacs = 10;
+AltiwardOCSF_CL
+| where TimeGenerated > ago(1h) and ClassUid == 6003
+    and tostring(Ocsf.unmapped.altiward.event_type) == "agent.enrollment"
+    and tostring(Ocsf.unmapped.altiward.detail.state) == "enrolled"
+| extend Token = tostring(Ocsf.unmapped.altiward.detail.token)
+| where isnotempty(Token)
+| summarize FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated) by TenantUid, Token, DeviceSerial
+| summarize FirstSeen = min(FirstSeen), LastSeen = max(LastSeen), NewMacs = count(), Macs = make_set(DeviceSerial, 100) by TenantUid, Token
+| where NewMacs >= MinNewMacs
+| order by NewMacs desc
