@@ -12,8 +12,9 @@ here reads those records in Sentinel's `AltiwardOCSF_CL` table and Splunk's `alt
 sourcetype, the way the Altiward setup creates them. CI checks every field a rule or search
 names against example records from both projects.
 
-**Status:** 0.4.0 is the latest release. The changes for 0.9.0 are in
-[CHANGELOG.md](CHANGELOG.md). Pin a release, and watch the repository's releases to
+**Status:** see the [latest release](https://github.com/Altiward/altiward-siem/releases/latest)
+for the published version and [CHANGELOG.md](CHANGELOG.md) for released and upcoming
+changes. Pin a release, and watch the repository's releases to
 hear when rules are added or changed: each release's notes, also in
 [CHANGELOG.md](CHANGELOG.md), say what changed and whose events it needs.
 
@@ -75,6 +76,35 @@ describes (altiward-forwarder uses the same table). Rules can't be created befor
 Choose the resource group of your Sentinel workspace and enter the workspace's name. It
 creates the rules turned on, with one alert per result row. The button deploys
 [`sentinel/azuredeploy.json`](sentinel/azuredeploy.json) from the `v0.4.0` release.
+
+### Verify downloaded release files
+
+From 0.9.0 onwards, releases include `SHA256SUMS` and its keyless signature bundle,
+`SHA256SUMS.sigstore.json`. Earlier releases do not have these files. To verify a release,
+install [cosign](https://docs.sigstore.dev/cosign/system_config/installation/) and download
+all four assets from the chosen release into a new directory. For 0.9.0, after it is
+published:
+
+```sh
+tag=v0.9.0
+mkdir "altiward-siem-$tag"
+cd "altiward-siem-$tag"
+for file in azuredeploy.json RELEASE_NOTES.md SHA256SUMS SHA256SUMS.sigstore.json; do
+  curl --fail --location --output "$file" \
+    "https://github.com/Altiward/altiward-siem/releases/download/$tag/$file"
+done
+cosign verify-blob --bundle SHA256SUMS.sigstore.json \
+  --certificate-identity "https://github.com/Altiward/altiward-siem/.github/workflows/release.yml@refs/tags/$tag" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com SHA256SUMS
+sha256sum -c SHA256SUMS
+```
+
+On macOS, replace the final command with `shasum -a 256 -c SHA256SUMS`. Continue only if
+both verification commands succeed. The signature binds the checksums to this repository's
+release workflow, the chosen tag and the GitHub Actions OIDC issuer. Checksums alone detect
+changed files but do not establish who published them. Use the verified `azuredeploy.json`
+when deploying a downloaded template. The Deploy to Azure button fetches its pinned source
+file directly and does not perform these consumer verification commands.
 
 ### One rule at a time
 

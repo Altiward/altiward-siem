@@ -46,11 +46,34 @@ make lint test check
 ```
 
 Add a line to [CHANGELOG.md](CHANGELOG.md) under the coming release, saying what the
-detection catches and whose events it needs. A maintainer releases by dating that section,
-moving the README's Deploy to Azure button (its link and the version named under it) to the
-new tag, and pushing a `vX.Y.Z` tag; `.github/workflows/release.yml` publishes the release,
-and `.github/workflows/azure-deploy-check.yml` then deploys its template into a new Sentinel
-workspace, checks every rule was created and turned on, and deletes the workspace.
+detection catches and whose events it needs.
+
+## Release
+
+A maintainer prepares a release through a pull request:
+
+1. Run `make lint test check`. Confirm the minimum server and agent versions in the README
+   and changelog still match the events each detection uses.
+2. Date the changelog section with the actual release day. Move the README's Deploy to
+   Azure button, both its link and the version named under it, to the intended tag. Do not
+   describe an unreleased version as available.
+3. After review and merge, the owner pushes the `vX.Y.Z` tag. The release workflow checks
+   the content, signs `SHA256SUMS` keylessly and verifies the signature, checksums and negative
+   cases before a separate job publishes `azuredeploy.json`, `RELEASE_NOTES.md`,
+   `SHA256SUMS` and `SHA256SUMS.sigstore.json`.
+4. Download the published files into a new directory and follow the README's verification
+   procedure using that exact tag. Confirm changed files, changed checksums and a different
+   expected signing identity are rejected. Local checks before publication cannot establish
+   the signing identity of a future GitHub release.
+5. Check the Azure deploy-check run dispatched on `main` by the release workflow. It uses
+   the tag's template in a new Sentinel workspace, verifies every rule was created and
+   turned on, and deletes the workspace. Resolve a failure before recommending the release
+   for deployment.
+6. Open a pull request in `Altiward/altiward.com` updating the SIEM version, release date
+   and release link in the "Is it released?" row under "At a glance" in
+   `assurance/index.html`. Check each component against an actually published release and
+   retain the other products' current versions. Verify the rendered
+   [assurance page](https://altiward.com/assurance/) after the website change is deployed.
 
 ## What the checks look at
 

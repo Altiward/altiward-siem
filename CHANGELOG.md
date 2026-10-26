@@ -13,6 +13,9 @@ altiward-forwarder.
 
 ### Changes
 
+- Releases include SHA-256 checksums and a keyless signature bundle for the Sentinel
+  template and release notes. The release workflow verifies them before publication;
+  the README explains how consumers verify the repository, workflow, release tag and files.
 - Sentinel and Splunk alert on `agent.enrollment`: a device key replaced without approval
   at High, or waiting for approval at Medium, every 15 minutes. The result includes the
   token fingerprint, both device IDs, reported hardware UUID comparison and key storage.
