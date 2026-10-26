@@ -50,7 +50,8 @@ unexplained-admin-rights finding closed because the rights were removed still al
 
 The device-key detections and enrolment-burst reports need Altiward server 0.8.0.
 A pending key is Medium and needs checking against the Mac's last check-in, the reported
-hardware UUID comparison and its owner's expectations. A key replaced with approval off
+hardware UUID comparison and its owner's expectations. With **Approve every new Mac** on
+(Altiward server 0.9.0), every new Mac raises one too. A key replaced with approval off
 is High. Bursts count distinct claimed serials per tenant and token over an hour, with a
 tunable threshold of 10. Normal rollouts can produce bursts too; compare independent
 inventory, because a shared enrolment token can enrol invented serials.

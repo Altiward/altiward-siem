@@ -16,7 +16,9 @@ altiward-forwarder.
 - Sentinel and Splunk alert on `agent.enrollment`: a device key replaced without approval
   at High, or waiting for approval at Medium, every 15 minutes. The result includes the
   token fingerprint, both device IDs, reported hardware UUID comparison and key storage.
-  Check pending keys against the Mac's last check-in and its owner's expectations.
+  Check pending keys against the Mac's last check-in and its owner's expectations. With
+  Altiward server 0.9.0's **Approve every new Mac** on, every new Mac raises a pending
+  alert too.
 - A Sentinel hunting query and Splunk report find at least 10 distinct claimed serials
   enrolled by one token in an hour, per tenant. Tune the threshold for normal rollouts;
   check unexpected bursts against independent inventory for invented serials. Exact
