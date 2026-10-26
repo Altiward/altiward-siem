@@ -1,5 +1,7 @@
 # altiward-siem
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Altiward/altiward-siem/badge)](https://scorecard.dev/viewer/?uri=github.com/Altiward/altiward-siem)
+
 Detections, hunting queries and saved searches for [Altiward](https://github.com/Altiward/altiward)
 and [altiward-forwarder](https://github.com/Altiward/altiward-forwarder) events in Microsoft
 Sentinel and Splunk.
