@@ -336,7 +336,7 @@
       "kind": "Scheduled",
       "properties": {
         "displayName": "Altiward: a device key is waiting for approval",
-        "description": "A new key is waiting for approval. This can be normal after a reinstall. Before\napproving, check the Mac's last check-in in Altiward, HardwareUuidMatches and whether\nits owner expects the change. An empty HardwareUuidMatches means there was no active\nkey to compare. Hardware UUIDs are client claims, not proof of the Mac's identity.\nNeeds Altiward server 0.8.0.\n",
+        "description": "A new key is waiting for approval. This can be normal after a reinstall, and for every\nnew Mac when Approve every new Mac is on in Altiward (server 0.9.0). Before approving,\ncheck the Mac's last check-in in Altiward, HardwareUuidMatches and whether its owner\nexpects the change. An empty HardwareUuidMatches means there was no active key to\ncompare, as for a new Mac. Hardware UUIDs are client claims, not proof of the Mac's\nidentity. Needs Altiward server 0.8.0.\n",
         "severity": "Medium",
         "enabled": true,
         "query": "AltiwardOCSF_CL\n| where ClassUid == 6003 and tostring(Ocsf.unmapped.altiward.event_type) == \"agent.enrollment\"\n    and tostring(Ocsf.unmapped.altiward.detail.state) == \"pending\"\n| extend Token = tostring(Ocsf.actor.user.name), DeviceId = tostring(Ocsf.unmapped.altiward.detail.device_id),\n    PreviousDeviceId = tostring(Ocsf.unmapped.altiward.detail.previous_device_id),\n    HardwareUuidMatches = tostring(Ocsf.unmapped.altiward.detail.hardware_uuid_matches),\n    KeyStorage = tostring(Ocsf.unmapped.altiward.detail.key_storage)\n| project TimeGenerated, TenantUid, DeviceSerial, Token, DeviceId, PreviousDeviceId, HardwareUuidMatches, KeyStorage, Message\n",
