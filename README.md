@@ -62,12 +62,14 @@ is High. Bursts count distinct claimed serials per tenant and token over an hour
 tunable threshold of 10. Normal rollouts can produce bursts too; compare independent
 inventory, because a shared enrolment token can enrol invented serials.
 
-The rotated-device-key detection needs Altiward server 1.0.0 and is High. It means two copies
-of one Mac's device key were used. The server has already revoked the lineage's key, and the
-Mac enrols again by itself. Before approving that pending key, confirm in your MDM that it is
-from that Mac, and look for where the copy came from: backups, disk images and Migration
-Assistant. A Mac restored from a backup older than its last rotation also raises it, and its
-fresh key is genuine.
+The rotated-device-key detection needs Altiward server 1.0.0 and is High. It means two
+copies of one Mac's device key were used. When RevokedDeviceId is set, the server has
+revoked the lineage's key and the Mac enrols again by itself. When it is empty, nothing was
+revoked: the key was replaced more than 30 days ago, or this key already caused a
+revocation. Before approving a pending key, confirm in your MDM that it is from that Mac,
+and look for where the copy came from: backups, disk images and Migration Assistant. A Mac
+restored from a backup older than its last rotation also raises it, and its fresh key is
+genuine.
 
 Altiward-forwarder's webhook events name the Mac by `device.uid` only, so `DeviceSerial`
 (Sentinel) is empty for them and Splunk's `host` is the hardware UUID. Its on-Mac hook
