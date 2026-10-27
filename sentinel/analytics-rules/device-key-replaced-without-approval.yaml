@@ -5,7 +5,7 @@ description: |
   re-enrolment approval is off. Check whether the owner expected the reinstall or key
   change and compare independent inventory. If unexpected, revoke the new key, enable
   approval and rotate the enrolment token. Hardware UUIDs are client claims.
-  Needs Altiward server 0.8.0.
+ 
 severity: High
 requiredDataConnectors: []
 queryFrequency: 15m

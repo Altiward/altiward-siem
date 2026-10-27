@@ -13,8 +13,7 @@ description: |
   empty and the pending key is the Mac's, the active key, if there is one, isn't the
   Mac's: revoke it, then approve the Mac's key. Look for where the copy came from:
   backups, disk images and Migration Assistant. A Mac restored from a backup older than
-  its last rotation also raises this alert, and its fresh key is genuine. Needs Altiward
-  server 1.0.0.
+  its last rotation also raises this alert, and its fresh key is genuine.
 severity: High
 requiredDataConnectors: []
 queryFrequency: 15m
