@@ -19,10 +19,14 @@ altiward-forwarder.
   ID and fingerprint, the key it was replaced by and the key revoked, if any. When the
   revoked key is set, the server has revoked the lineage's key and the Mac enrols again by
   itself; when it is empty, nothing was revoked: the key was replaced more than 30 days
-  ago, or this key already caused a revocation. Confirm in your MDM that a pending key is
-  from that Mac before approving it, and look for where the copy came from: backups, disk
-  images and Migration Assistant. A Mac restored from a backup older than its last
-  rotation also raises it, and its fresh key is genuine. Needs Altiward server 1.0.0.
+  ago, or this key already caused a revocation. A copy carries the Mac's serial number and
+  hardware UUID, so approve only the pending key whose fingerprint matches what
+  `altiward-agent status` (agent 1.0.0) prints on the Mac, run through your MDM, and reject
+  the others. When nothing was revoked and the pending key is the Mac's, revoke the active
+  key, if there is one, then approve the Mac's. Look for where the copy came from:
+  backups, disk images and Migration Assistant. A Mac restored from a backup older than
+  its last rotation also raises it, and its fresh key is genuine. Needs Altiward server
+  1.0.0.
 
 ## 0.9.0 - 2026-10-27
 
