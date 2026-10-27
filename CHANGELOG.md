@@ -9,6 +9,20 @@ renamed rule or search is a breaking change, called out under `### Breaking chan
 each new or changed detection whose events it needs: Altiward, or both Altiward and
 altiward-forwarder.
 
+## 1.0.0 - unreleased
+
+### Changes
+
+- Sentinel and Splunk alert on `agent.enrollment` in the state `rotated_key_used`, at High,
+  every 15 minutes: a device key that the Mac had already replaced by rotation was used
+  again, so two copies of that Mac's key exist. The result includes the stale key's device
+  ID and fingerprint, the key it was replaced by and the key revoked, if any. The server
+  has already revoked the lineage's key and the Mac enrols again by itself. Confirm in your
+  MDM that the pending key is from that Mac before approving it, and look for where the copy
+  came from: backups, disk images and Migration Assistant. A Mac restored from a backup older
+  than its last rotation also raises it, and its fresh key is genuine. Needs Altiward server
+  1.0.0.
+
 ## 0.9.0 - 2026-10-27
 
 ### Changes

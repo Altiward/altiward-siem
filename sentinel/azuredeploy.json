@@ -579,6 +579,47 @@
       "type": "Microsoft.SecurityInsights/alertRules",
       "apiVersion": "2024-09-01",
       "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "2e34e173-8080-41a4-b282-949323a460dd",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: a rotated device key was used",
+        "description": "A device key that the Mac had already replaced by rotation was used again. Two copies\nof one Mac's device key exist: the Mac's, and a copy made from a backup, a disk image or a\nmigration. Altiward has already revoked the lineage's key (RevokedDeviceId), so neither\nholder has a working key. The Mac enrols again by itself. Before approving that pending key, confirm in your MDM\nthat it is from that Mac. Look for where the copy came from: backups, disk images and\nMigration Assistant. A Mac restored from a backup older than its last rotation also raises\nthis alert, and its fresh key is genuine. RevokedDeviceId is empty when this use revoked\nnothing, as when the same stale key is used again or was replaced over 30 days ago.\nNeeds Altiward server 1.0.0.\n",
+        "severity": "High",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 6003 and tostring(Ocsf.unmapped.altiward.event_type) == \"agent.enrollment\"\n    and tostring(Ocsf.unmapped.altiward.detail.state) == \"rotated_key_used\"\n| extend DeviceId = tostring(Ocsf.unmapped.altiward.detail.device_id),\n    KeyFingerprint = tostring(Ocsf.unmapped.altiward.detail.key_fingerprint),\n    RotatedTo = tostring(Ocsf.unmapped.altiward.detail.rotated_to),\n    RevokedDeviceId = tostring(Ocsf.unmapped.altiward.detail.revoked_device_id)\n| project TimeGenerated, TenantUid, DeviceSerial, DeviceId, KeyFingerprint, RotatedTo, RevokedDeviceId, Message\n",
+        "queryFrequency": "PT15M",
+        "queryPeriod": "PT15M",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "CredentialAccess"
+        ],
+        "techniques": [
+          "T1552"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Host",
+            "fieldMappings": [
+              {
+                "identifier": "HostName",
+                "columnName": "DeviceSerial"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
       "name": "34aa11ec-4978-4a6e-ab36-4797370548d8",
       "kind": "Scheduled",
       "properties": {
