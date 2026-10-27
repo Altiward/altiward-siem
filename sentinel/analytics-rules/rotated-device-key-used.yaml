@@ -1,0 +1,40 @@
+id: 2e34e173-8080-41a4-b282-949323a460dd
+name: "Altiward: a rotated device key was used"
+description: |
+  A device key that the Mac had already replaced by rotation was used again. Two copies
+  of one Mac's device key exist: the Mac's, and a copy made from a backup, a disk image
+  or a migration. When RevokedDeviceId is set, Altiward has revoked the lineage's key,
+  so neither holder has a working key, and the Mac enrols again by itself. When it is
+  empty, nothing was revoked: the key was replaced more than 30 days ago, or this key
+  already caused a revocation. Before approving a pending key, confirm in your MDM that
+  it is from that Mac. Look for where the copy came from: backups, disk images and
+  Migration Assistant. A Mac restored from a backup older than its last rotation also
+  raises this alert, and its fresh key is genuine. Needs Altiward server 1.0.0.
+severity: High
+requiredDataConnectors: []
+queryFrequency: 15m
+queryPeriod: 15m
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - CredentialAccess
+relevantTechniques:
+  - T1552
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 6003 and tostring(Ocsf.unmapped.altiward.event_type) == "agent.enrollment"
+      and tostring(Ocsf.unmapped.altiward.detail.state) == "rotated_key_used"
+  | extend DeviceId = tostring(Ocsf.unmapped.altiward.detail.device_id),
+      KeyFingerprint = tostring(Ocsf.unmapped.altiward.detail.key_fingerprint),
+      RotatedTo = tostring(Ocsf.unmapped.altiward.detail.rotated_to),
+      RevokedDeviceId = tostring(Ocsf.unmapped.altiward.detail.revoked_device_id)
+  | project TimeGenerated, TenantUid, DeviceSerial, DeviceId, KeyFingerprint, RotatedTo, RevokedDeviceId, Message
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceSerial
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled

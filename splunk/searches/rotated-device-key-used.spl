@@ -1,0 +1,2 @@
+sourcetype="altiward:ocsf" class_uid=6003 unmapped.altiward.event_type="agent.enrollment" unmapped.altiward.detail.state="rotated_key_used"
+| table _time metadata.tenant_uid host unmapped.altiward.detail.device_id unmapped.altiward.detail.key_fingerprint unmapped.altiward.detail.rotated_to unmapped.altiward.detail.revoked_device_id message
