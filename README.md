@@ -70,9 +70,8 @@ revocation. A copy carries the Mac's serial number and hardware UUID, so they do
 its key from the Mac's. Run `altiward-agent status` on the Mac through your MDM, approve
 only the pending key whose fingerprint in Enrollments matches the `key fingerprint` it
 prints, and reject the others. When RevokedDeviceId is empty and the pending key is the
-Mac's, a copy rotated first and the active key is the copy's: revoke it, then approve the
-Mac's key. Look for where the copy came from: backups, disk images and Migration
-Assistant. A Mac restored from a backup older than its last rotation also raises it, and
+Mac's, the active key, if there is one, isn't the Mac's: revoke it, then approve the Mac's
+key. Look for where the copy came from: backups, disk images and Migration Assistant. A Mac restored from a backup older than its last rotation also raises it, and
 its fresh key is genuine.
 
 Altiward-forwarder's webhook events name the Mac by `device.uid` only, so `DeviceSerial`
