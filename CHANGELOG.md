@@ -9,6 +9,13 @@ renamed rule or search is a breaking change, called out under `### Breaking chan
 each new or changed detection whose events it needs: Altiward, or both Altiward and
 altiward-forwarder.
 
+## 1.0.1 - unreleased
+
+### Changes
+
+- Rule, saved search and hunting query descriptions no longer say which Altiward release
+  each needs: they all work with Altiward 1.0, the oldest release Altiward supports.
+
 ## 1.0.0 - 2026-10-27
 
 ### Changes

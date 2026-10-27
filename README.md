@@ -54,15 +54,14 @@ Rules about findings that can be resolved (unexplained admin rights, tamper chec
 Macs) alert only on findings still open at the end of that hour. One exception: an
 unexplained-admin-rights finding closed because the rights were removed still alerts once.
 
-The device-key detections and enrolment-burst reports need Altiward server 0.8.0.
-A pending key is Medium and needs checking against the Mac's last check-in, the reported
-hardware UUID comparison and its owner's expectations. With **Approve every new Mac** on
-(Altiward server 0.9.0), every new Mac raises one too. A key replaced with approval off
-is High. Bursts count distinct claimed serials per tenant and token over an hour, with a
-tunable threshold of 10. Normal rollouts can produce bursts too; compare independent
+In the device-key detections, a pending key is Medium and needs checking against the Mac's
+last check-in, the reported hardware UUID comparison and its owner's expectations. With
+**Approve every new Mac** on, every new Mac raises one too. A key replaced with approval
+off is High. Enrolment bursts count distinct claimed serials per tenant and token over an
+hour, with a tunable threshold of 10. Normal rollouts can produce bursts too; compare independent
 inventory, because a shared enrolment token can enrol invented serials.
 
-The rotated-device-key detection needs Altiward server 1.0.0 and is High. It means two
+The rotated-device-key detection is High. It means two
 copies of one Mac's device key were used. When RevokedDeviceId is set, the server has
 revoked the lineage's key and the Mac enrols again by itself. When it is empty, nothing was
 revoked: the key was replaced more than 30 days ago, or this key already caused a
@@ -94,11 +93,9 @@ creates the rules turned on, with one alert per result row. The button deploys
 
 ### Verify downloaded release files
 
-From 0.9.0 onwards, releases include `SHA256SUMS` and its keyless signature bundle,
-`SHA256SUMS.sigstore.json`. Earlier releases do not have these files. To verify a release,
-install [cosign](https://docs.sigstore.dev/cosign/system_config/installation/) and download
-all four assets from the chosen release into a new directory. For 1.0.0, after it is
-published:
+Releases include `SHA256SUMS` and its keyless signature bundle, `SHA256SUMS.sigstore.json`.
+To verify a release, install [cosign](https://docs.sigstore.dev/cosign/system_config/installation/)
+and download all four assets from the chosen release into a new directory. For 1.0.0:
 
 ```sh
 tag=v1.0.0

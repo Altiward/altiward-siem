@@ -6,7 +6,7 @@ description: |
   by hand to make those rights look granted, or to keep a Privileges session going, so this
   is an attack signal, not a misconfiguration. Kind says what was claimed (grant, renewal or
   give_back), Outcome whether it was refused or accepted_unconfirmed, and Reason why.
-  CallerUid is the UID of the process that sent the claim. Needs Altiward agent 0.4.0.
+  CallerUid is the UID of the process that sent the claim.
 severity: High
 requiredDataConnectors: []
 queryFrequency: 15m

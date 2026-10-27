@@ -1,7 +1,7 @@
 // Successful enrolments of at least 10 distinct claimed serials from one token in the
 // last hour. Tune MinNewMacs to your rollout. Invented serials can consume the allowance;
 // check independent inventory and rotate an unexpected token. Exact retries do not add
-// Macs to the count. Token is a fingerprint, not the secret. Needs Altiward server 0.8.0.
+// Macs to the count. Token is a fingerprint, not the secret.
 // Tags: altiward
 let MinNewMacs = 10;
 AltiwardOCSF_CL

@@ -2,11 +2,11 @@ id: 57b39ce0-f1c9-40cb-929d-3ee9e363cf7b
 name: "Altiward: a device key is waiting for approval"
 description: |
   A new key is waiting for approval. This can be normal after a reinstall, and for every
-  new Mac when Approve every new Mac is on in Altiward (server 0.9.0). Before approving,
+  new Mac when Approve every new Mac is on in Altiward. Before approving,
   check the Mac's last check-in in Altiward, HardwareUuidMatches and whether its owner
   expects the change. An empty HardwareUuidMatches means there was no active key to
   compare, as for a new Mac. Hardware UUIDs are client claims, not proof of the Mac's
-  identity. Needs Altiward server 0.8.0.
+  identity.
 severity: Medium
 requiredDataConnectors: []
 queryFrequency: 15m
