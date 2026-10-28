@@ -9,6 +9,22 @@ renamed rule or search is a breaking change, called out under `### Breaking chan
 each new or changed detection whose events it needs: Altiward, or both Altiward and
 altiward-forwarder.
 
+## 1.2.0 - unreleased
+
+### Changes
+
+- The break-glass rule (Sentinel analytics rule and Splunk saved search) also fires when
+  someone signs in with the break-glass token, which Altiward server 1.2.0 records as a
+  console sign-in, as well as when they act with it. It matches only the console's
+  records, so a Mac enrolled with a serial that starts `break-glass:` doesn't set it off.
+  It also alerts, once, on records that arrive up to 7 days late: both search the last 7
+  days of records and alert on those that arrived (were ingested or indexed) in the last
+  hour, and the Splunk search also looks a day ahead, for a server clock that runs fast.
+  Records arrive late when the SIEM can't be reached for a while: Altiward keeps them and
+  tries again, up to an hour apart, and the break-glass token is for outages. With older
+  servers it fires on changes, as before. Needs Altiward. The Console sign-ins hunting
+  query and saved search list console token sign-ins too.
+
 ## 1.0.1 - unreleased
 
 ### Changes

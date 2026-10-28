@@ -1,2 +1,3 @@
-sourcetype="altiward:ocsf" class_uid=6003 actor.user.name="break-glass:*"
-| table _time actor.user.name api.operation message
+sourcetype="altiward:ocsf" ((class_uid=6003 actor.user.name="break-glass:*") OR (class_uid=3002 user.name="break-glass:*")) unmapped.altiward.event_type="console.*" _index_earliest=-1h@h _index_latest=@h
+| eval who=coalesce('actor.user.name', 'user.name'), action=coalesce('api.operation', 'unmapped.altiward.action')
+| table _time who action message
