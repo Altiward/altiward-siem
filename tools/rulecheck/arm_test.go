@@ -78,4 +78,23 @@ func TestBuildARM(t *testing.T) {
 	if p["eventGroupingSettings"].(map[string]any)["aggregationKind"] != "AlertPerResult" {
 		t.Errorf("eventGroupingSettings %v", p["eventGroupingSettings"])
 	}
+	if _, ok := p["alertDetailsOverride"]; ok {
+		t.Errorf("alertDetailsOverride %v, want none", p["alertDetailsOverride"])
+	}
+
+	// A severity column becomes alertDetailsOverride.
+	v, err = parseYAML(strings.Replace(goodRule, "kind: Scheduled\n",
+		"alertDetailsOverride:\n  alertSeverityColumnName: UserName\nkind: Scheduled\n", 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r, problems = parseRule(v.(map[string]any)); len(problems) > 0 {
+		t.Fatal(problems)
+	}
+	if b, err = buildARM([]rule{r}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), "\"alertDetailsOverride\": {\n          \"alertSeverityColumnName\": \"UserName\"\n        }") {
+		t.Errorf("no alertDetailsOverride in\n%s", b)
+	}
 }

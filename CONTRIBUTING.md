@@ -22,6 +22,10 @@ rules, plus `tags`:
   rest of the OCSF record.
 - `entityMappings`: map columns the query returns, usually Host from `DeviceSerial` and
   Account from `UserName`.
+- `alertDetailsOverride` (optional): only `alertSeverityColumnName`, a column the query
+  returns holding `High`, `Medium`, `Low` or `Informational`, when alerts should take their
+  severity from each result. Splunk can't do this: give it a separate saved search for the
+  other severity.
 - `tags`: `altiward`, or `altiward` and `forwarder` if it also works on altiward-forwarder's
   records.
 - `version`: raise it when you change the rule.

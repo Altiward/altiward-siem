@@ -1,3 +1,3 @@
-sourcetype="altiward:ocsf" class_uid=2004 finding_info.analytic.name="altiward.tamper.*" finding_info.analytic.name!="altiward.tamper.grant_claim"
+sourcetype="altiward:ocsf" class_uid=2004 finding_info.analytic.name="altiward.tamper.*" finding_info.analytic.name!="altiward.tamper.grant_claim" finding_info.analytic.name!="altiward.tamper.platform_sso_link" finding_info.analytic.name!="altiward.tamper.platform_sso_link_changed"
 | stats latest(activity_name) as last latest(message) as message latest(severity) as severity by finding_info.uid host
 | where last="Create"

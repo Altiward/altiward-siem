@@ -171,6 +171,8 @@ func TestCheckRuleKeys(t *testing.T) {
 		"table":           {"  AltiwardOCSF_CL\n", "  SecurityEvent\n", "AltiwardOCSF_CL"},
 		"entity column":   {"columnName: DeviceSerial", "columnName: Computer", "Computer"},
 		"entity type":     {"entityType: Host", "entityType: Laptop", "Laptop"},
+		"severity column": {"kind: Scheduled\n", "alertDetailsOverride:\n  alertSeverityColumnName: Level\nkind: Scheduled\n", "Level"},
+		"other override":  {"kind: Scheduled\n", "alertDetailsOverride:\n  alertDisplayNameFormat: x\nkind: Scheduled\n", "alertSeverityColumnName"},
 	} {
 		rule := strings.Replace(goodRule, c.from, c.to, 1)
 		if rule == goodRule {

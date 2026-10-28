@@ -6,7 +6,10 @@ description: |
   check the Mac's last check-in in Altiward, HardwareUuidMatches and whether its owner
   expects the change. An empty HardwareUuidMatches means there was no active key to
   compare, as for a new Mac. Hardware UUIDs are client claims, not proof of the Mac's
-  identity.
+  identity. With Intune connected, MdmCheck is what Intune said about the device ID the Mac
+  sent: mismatch (High) means Intune has that ID under another serial or on another
+  platform, so it is another Mac's or another device's, and the key waits for approval
+  whatever the settings. Other keys are Medium.
 severity: Medium
 requiredDataConnectors: []
 queryFrequency: 15m
@@ -24,14 +27,19 @@ query: |
   | extend Token = tostring(Ocsf.actor.user.name), DeviceId = tostring(Ocsf.unmapped.altiward.detail.device_id),
       PreviousDeviceId = tostring(Ocsf.unmapped.altiward.detail.previous_device_id),
       HardwareUuidMatches = tostring(Ocsf.unmapped.altiward.detail.hardware_uuid_matches),
-      KeyStorage = tostring(Ocsf.unmapped.altiward.detail.key_storage)
-  | project TimeGenerated, TenantUid, DeviceSerial, Token, DeviceId, PreviousDeviceId, HardwareUuidMatches, KeyStorage, Message
+      KeyStorage = tostring(Ocsf.unmapped.altiward.detail.key_storage),
+      MdmCheck = tostring(Ocsf.unmapped.altiward.detail.mdm_check)
+  | extend AlertSeverity = iff(MdmCheck == "mismatch", "High", "Medium")
+  | project TimeGenerated, TenantUid, DeviceSerial, Token, DeviceId, PreviousDeviceId, HardwareUuidMatches, KeyStorage,
+      MdmCheck, AlertSeverity, Message
 entityMappings:
   - entityType: Host
     fieldMappings:
       - identifier: HostName
         columnName: DeviceSerial
+alertDetailsOverride:
+  alertSeverityColumnName: AlertSeverity
 tags:
   - altiward
-version: 1.0.0
+version: 1.1.0
 kind: Scheduled

@@ -27,8 +27,11 @@ type rule struct {
 	RelevantTechniques []string
 	Query              string
 	EntityMappings     []entityMapping
-	Tags               []string
-	Version            string
+	// AlertDetailsOverride is alertDetailsOverride: only alertSeverityColumnName, a column
+	// the query returns that gives each alert's severity in place of Severity.
+	AlertDetailsOverride map[string]string
+	Tags                 []string
+	Version              string
 }
 
 type entityMapping struct {
@@ -43,7 +46,7 @@ type fieldMapping struct {
 
 var (
 	ruleKeys = []string{"id", "name", "description", "severity", "requiredDataConnectors", "queryFrequency", "queryPeriod",
-		"triggerOperator", "triggerThreshold", "tactics", "relevantTechniques", "query", "entityMappings", "tags", "version", "kind"}
+		"triggerOperator", "triggerThreshold", "tactics", "relevantTechniques", "query", "entityMappings", "alertDetailsOverride", "tags", "version", "kind"}
 	severities = []string{"High", "Medium", "Low", "Informational"}
 	// The tactics and entity types Sentinel's alertRules API (2024-09-01) accepts.
 	tactics = []string{"Collection", "CommandAndControl", "CredentialAccess", "DefenseEvasion", "Discovery", "Execution",
@@ -195,6 +198,19 @@ func parseRule(v map[string]any) (rule, []string) {
 			e.FieldMappings = append(e.FieldMappings, mapping)
 		}
 		r.EntityMappings = append(r.EntityMappings, e)
+	}
+
+	if o, ok := v["alertDetailsOverride"]; ok {
+		m, _ := o.(map[string]any)
+		col, _ := m["alertSeverityColumnName"].(string)
+		switch {
+		case len(m) != 1 || col == "":
+			add("alertDetailsOverride takes only alertSeverityColumnName")
+		case !words[col]:
+			add("alertDetailsOverride's alertSeverityColumnName %s isn't a column the query returns", col)
+		default:
+			r.AlertDetailsOverride = map[string]string{"alertSeverityColumnName": col}
+		}
 	}
 	return r, problems
 }

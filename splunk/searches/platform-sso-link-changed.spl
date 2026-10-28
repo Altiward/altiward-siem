@@ -1,0 +1,2 @@
+sourcetype="altiward:ocsf" class_uid=2004 finding_info.analytic.name="altiward.tamper.platform_sso_link_changed"
+| table _time host unmapped.altiward.detail.user unmapped.altiward.detail.previous_upn unmapped.altiward.detail.upn message
