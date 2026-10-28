@@ -3,12 +3,13 @@ name: "Altiward: the console's break-glass token was used"
 description: |
   Someone signed in to the Altiward console, or acted in it, with a console token while
   single sign-on is on: the break-glass login, meant for when the identity provider is down.
-  UserName is break-glass: and the token's fingerprint. Records that arrive late still
-  alert, as exports back off for up to an hour.
+  UserName is break-glass: and the token's fingerprint. Only the console's records match.
+  Records that arrive up to 7 days late still alert, once: the rule searches the last 7
+  days of records and alerts on those ingested in the last hour.
 severity: Medium
 requiredDataConnectors: []
 queryFrequency: 1h
-queryPeriod: 2d
+queryPeriod: 7d
 triggerOperator: gt
 triggerThreshold: 0
 tactics:
@@ -20,6 +21,7 @@ query: |
   AltiwardOCSF_CL
   | where ingestion_time() > ago(1h)
   | where ClassUid in (6003, 3002) and UserName startswith "break-glass:"
+  | where tostring(Ocsf.unmapped.altiward.event_type) startswith "console."
   | extend Action = iff(ClassUid == 3002, tostring(Ocsf.unmapped.altiward.action), tostring(Ocsf.api.operation))
   | project TimeGenerated, UserName, Action, DeviceSerial, Message
 entityMappings:
