@@ -1,4 +1,4 @@
-// Single sign-on to the Altiward console: sign-ins (with the role given) and sign-outs.
+// Sign-ins to the Altiward console (with the role given) and sign-outs: single sign-on, and each hour a console token is used (the break-glass login).
 // Tags: altiward
 AltiwardOCSF_CL
 | where ClassUid == 3002 and tostring(Ocsf.service.name) == "Altiward console"

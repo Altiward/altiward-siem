@@ -51,7 +51,8 @@ var (
 	kqlWord     = regexp.MustCompile(`\b[A-Za-z_]\w*\b`)
 	kqlOcsf     = regexp.MustCompile(`\bOcsf((?:\.[A-Za-z_]\w*|\[\d+\])+)`)
 	kqlExpand   = regexp.MustCompile(`mv-expand\s+(\w+)\s*=\s*Ocsf((?:\.[A-Za-z_]\w*)+)`)
-	kqlClass    = regexp.MustCompile(`\bClassUid\s*==\s*(\d+)`)
+	kqlClass    = regexp.MustCompile(`\bClassUid\s*(?:==\s*(\d+)|in\s*\(([\d\s,]+)\))`)
+	kqlNumber   = regexp.MustCompile(`\d+`)
 	kqlAnalytic = regexp.MustCompile(`finding_info\.analytic\.name\)\s*(==|startswith)\s*"([^"]+)"`)
 	arrayIndex  = regexp.MustCompile(`\[\d+\]`)
 	splString   = regexp.MustCompile(`"(?:[^"\\]|\\.)*"`)
@@ -67,7 +68,7 @@ var (
 	splAnalytic = regexp.MustCompile(`\bfinding_info\.analytic\.name="([^"]+)"`)
 	// Splunk's own fields, and search and streamstats options that look like comparisons.
 	splBuiltIn = map[string]bool{"sourcetype": true, "source": true, "index": true, "host": true, "_time": true, "earliest": true,
-		"latest": true, "count": true, "current": true}
+		"latest": true, "_index_earliest": true, "_index_latest": true, "count": true, "current": true}
 )
 
 func (q *query) add(name string, paths ...string) {
@@ -107,8 +108,10 @@ func analyzeKQL(kql string) query {
 		q.Table = w
 	}
 	for _, m := range kqlClass.FindAllStringSubmatch(raw, -1) {
-		n, _ := strconv.Atoi(m[1])
-		q.Classes = append(q.Classes, n)
+		for _, d := range kqlNumber.FindAllString(m[1]+m[2], -1) {
+			n, _ := strconv.Atoi(d)
+			q.Classes = append(q.Classes, n)
+		}
 	}
 	if m := kqlAnalytic.FindStringSubmatch(raw); m != nil {
 		q.Analytic = match{Value: m[2], Prefix: m[1] == "startswith"}

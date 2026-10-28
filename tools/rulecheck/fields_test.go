@@ -57,6 +57,13 @@ func TestKQLFields(t *testing.T) {
 		t.Errorf("startswith: %+v", q.Analytic)
 	}
 
+	// ClassUid in (a, b) names every class listed.
+	q = analyzeKQL(`AltiwardOCSF_CL
+| where ClassUid in (6003, 3002) and UserName startswith "break-glass:"`)
+	if !reflect.DeepEqual(q.Classes, []int{3002, 6003}) {
+		t.Errorf("in: classes %v", q.Classes)
+	}
+
 	// let statements come before the table.
 	q = analyzeKQL(`// The limit.
 let MaxAdminMinutes = 120;
@@ -71,6 +78,10 @@ AltiwardOCSF_CL
 }
 
 func TestSPLFields(t *testing.T) {
+	// Index-time bounds are search options, not fields.
+	if q := analyzeSPL(`sourcetype="altiward:ocsf" class_uid=6003 _index_earliest=-1h@h _index_latest=@h`); !reflect.DeepEqual(names(q.Fields), []string{"class_uid"}) {
+		t.Errorf("index-time bounds: %q", names(q.Fields))
+	}
 	q := analyzeSPL(`sourcetype="altiward:ocsf" class_uid=2004 finding_info.analytic.name="altiward.tamper.*"
 | stats latest(activity_name) as last latest(message) as message latest(severity) as severity by finding_info.uid host
 | where last="Create"

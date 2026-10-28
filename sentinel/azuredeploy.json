@@ -202,12 +202,12 @@
       "kind": "Scheduled",
       "properties": {
         "displayName": "Altiward: the console's break-glass token was used",
-        "description": "Someone acted in the Altiward console with a console token while single sign-on is on:\nthe break-glass login, meant for when the identity provider is down. UserName is\nbreak-glass: and the token's fingerprint.\n",
+        "description": "Someone signed in to the Altiward console, or acted in it, with a console token while\nsingle sign-on is on: the break-glass login, meant for when the identity provider is down.\nUserName is break-glass: and the token's fingerprint. Records that arrive late still\nalert, as exports back off for up to an hour.\n",
         "severity": "Medium",
         "enabled": true,
-        "query": "AltiwardOCSF_CL\n| where ClassUid == 6003 and UserName startswith \"break-glass:\"\n| project TimeGenerated, UserName, Action = tostring(Ocsf.api.operation), DeviceSerial, Message\n",
+        "query": "AltiwardOCSF_CL\n| where ingestion_time() > ago(1h)\n| where ClassUid in (6003, 3002) and UserName startswith \"break-glass:\"\n| extend Action = iff(ClassUid == 3002, tostring(Ocsf.unmapped.altiward.action), tostring(Ocsf.api.operation))\n| project TimeGenerated, UserName, Action, DeviceSerial, Message\n",
         "queryFrequency": "PT1H",
-        "queryPeriod": "PT1H",
+        "queryPeriod": "P2D",
         "triggerOperator": "GreaterThan",
         "triggerThreshold": 0,
         "suppressionDuration": "PT1H",
@@ -233,7 +233,7 @@
         "eventGroupingSettings": {
           "aggregationKind": "AlertPerResult"
         },
-        "templateVersion": "1.0.0"
+        "templateVersion": "1.1.0"
       }
     },
     {
