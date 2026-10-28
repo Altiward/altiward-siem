@@ -1,0 +1,47 @@
+id: c15e98f3-8667-42cf-b441-a3ff5a9d189d
+name: "Altiward: a Mac account's Platform SSO link may now name someone else"
+description: |
+  A Mac account's Platform SSO link changed in a way that may put the account on someone
+  else's UPN: it moved to another account, or it was added when the account was last linked
+  to someone else, when another Mac account has the same link, or while someone held admin
+  rights. Altiward takes each person's UPN from these links, so later elevations on that
+  account carry the new UPN. Account is the Mac account, PreviousUpn the account it was linked
+  to before (empty for none) and Upn the one it is linked to now. Check with the account's
+  owner, and in your identity provider, that the new link is theirs. Other links added or
+  removed (altiward.tamper.platform_sso_link), as registering for Platform SSO does, don't
+  alert.
+severity: High
+requiredDataConnectors: []
+queryFrequency: 15m
+queryPeriod: 15m
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - DefenseEvasion
+  - Persistence
+relevantTechniques:
+  - T1098
+  - T1556
+query: |
+  AltiwardOCSF_CL
+  | where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == "altiward.tamper.platform_sso_link_changed"
+  | extend Account = tostring(Ocsf.unmapped.altiward.detail.user),
+      PreviousUpn = tostring(Ocsf.unmapped.altiward.detail.previous_upn), Upn = tostring(Ocsf.unmapped.altiward.detail.upn)
+  | project TimeGenerated, DeviceSerial, Account, PreviousUpn, Upn, Message
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: DeviceSerial
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: Account
+  - entityType: Account
+    fieldMappings:
+      - identifier: FullName
+        columnName: Upn
+tags:
+  - altiward
+version: 1.0.0
+kind: Scheduled

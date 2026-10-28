@@ -32,6 +32,7 @@ means it also works with altiward-forwarder's records, which are grants and revo
 | Admin rights that outlived their expiry | Altiward | [rule](sentinel/analytics-rules/rights-after-expiry.yaml) | [alert](splunk/searches/admin-rights-after-expiry.spl) |
 | A tamper check failing on a Mac | Altiward | [rule](sentinel/analytics-rules/tamper.yaml) | [alert](splunk/searches/tamper-checks-failing.spl) |
 | A SAP Privileges grant claim the agent refused or Privileges' log didn't confirm | Altiward | [rule](sentinel/analytics-rules/grant-claim.yaml) | [alert](splunk/searches/grant-claims-refused-or-not-confirmed.spl) |
+| A Mac account's Platform SSO link that may now name someone else | Altiward | [rule](sentinel/analytics-rules/platform-sso-link-changed.yaml) | [alert](splunk/searches/platform-sso-link-changed.spl) |
 | A device key replaced without approval | Altiward | [rule](sentinel/analytics-rules/device-key-replaced-without-approval.yaml) | [alert](splunk/searches/device-key-replaced-without-approval.spl) |
 | A device key waiting for approval | Altiward | [rule](sentinel/analytics-rules/device-key-waiting-for-approval.yaml) | [alert](splunk/searches/device-key-waiting-for-approval.spl) |
 | A device key that the Mac had already replaced by rotation, used again | Altiward | [rule](sentinel/analytics-rules/rotated-device-key-used.yaml) | [alert](splunk/searches/rotated-device-key-used.spl) |
@@ -48,11 +49,18 @@ means it also works with altiward-forwarder's records, which are grants and revo
 | Console sign-ins and sign-outs | Altiward | [hunting](sentinel/hunting/console-sign-ins.kql) | [report](splunk/searches/console-sign-ins.spl) |
 | Use of permanent admin accounts: sign-ins, authorisation prompts and screen sharing | Altiward | [hunting](sentinel/hunting/permanent-admin-use.kql) | [report](splunk/searches/permanent-admin-use.spl) |
 
-Sentinel rules run every hour over the last hour (grant claims and device keys: every 15 minutes; the
-elevation count: daily over 7 days; admin time per day: daily, for the last complete UTC day).
+Sentinel rules run every hour over the last hour (grant claims, Platform SSO link changes and
+device keys: every 15 minutes; the elevation count: daily over 7 days; admin time per day:
+daily, for the last complete UTC day).
 Rules about findings that can be resolved (unexplained admin rights, tamper checks, silent
 Macs) alert only on findings still open at the end of that hour. One exception: an
 unexplained-admin-rights finding closed because the rights were removed still alerts once.
+
+On a Mac registered for Platform SSO, Altiward takes each person's UPN from their Mac
+account's Platform SSO link. A link that may now name someone else is High, with the Mac
+account and the UPNs before and after: check with the account's owner, and in your identity
+provider, that the new link is theirs. Other links added or removed, which mostly record
+people registering for Platform SSO, don't alert.
 
 In the device-key detections, a pending key is Medium and needs checking against the Mac's
 last check-in, the reported hardware UUID comparison and its owner's expectations. With
@@ -133,8 +141,8 @@ hunting query.
 ## Splunk
 
 [`splunk/savedsearches.conf`](splunk/savedsearches.conf) has every search as a saved search:
-alerts that run hourly (grant claims and device keys: every 15 minutes; the elevation count and admin time
-per day: daily) and reports. Copy
+alerts that run hourly (grant claims, Platform SSO link changes and device keys: every 15
+minutes; the elevation count and admin time per day: daily) and reports. Copy
 it to `$SPLUNK_HOME/etc/apps/<your app>/local/savedsearches.conf` and restart Splunk. The
 searches are off until you enable them in Settings, Searches, reports, and alerts, where you
 also add the alert action you want (email, a webhook, your SOAR).

@@ -24,6 +24,17 @@ altiward-forwarder.
   tries again, up to an hour apart, and the break-glass token is for outages. With older
   servers it fires on changes, as before. Needs Altiward. The Console sign-ins hunting
   query and saved search list console token sign-ins too.
+- Sentinel and Splunk alert on a Mac account's Platform SSO link that may now name someone
+  else (`altiward.tamper.platform_sso_link_changed`), at High, every 15 minutes: the link
+  moved to another account, or was added when the account was last linked to someone else,
+  when another Mac account has the same link, or while someone held admin rights. Altiward
+  takes each person's UPN from these links, so later elevations on that account carry the
+  new UPN. The result shows the Mac and the Mac account, and the UPNs before and after.
+  Needs Altiward server and agent 1.2.0.
+- "A tamper check is failing" leaves Platform SSO link changes out, so they don't alert
+  twice, and leaves out other links added or removed (`altiward.tamper.platform_sso_link`),
+  which mostly record people registering for Platform SSO: before, a rollout raised one
+  alert for each person.
 
 ## 1.0.1 - unreleased
 

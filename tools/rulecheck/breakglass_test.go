@@ -117,19 +117,48 @@ func value(r map[string]any, path string) string {
 }
 
 var (
-	kqlWhere = regexp.MustCompile(`(?m)^\s*\|\s*where\s+(.+)$`)
-	kqlTerm  = regexp.MustCompile(`^(?:ClassUid\s*==\s*(\d+)|ClassUid\s+in\s*\(([\d\s,]+)\)|` +
-		`(\w+|tostring\(Ocsf((?:\.\w+)+)\))\s+(==|startswith)\s+"([^"]*)")$`)
+	kqlAnd  = regexp.MustCompile(`\s+and\s+`)
+	kqlTerm = regexp.MustCompile(`^(?:ClassUid\s*==\s*(\d+)|ClassUid\s+in\s*\(([\d\s,]+)\)|` +
+		`(\w+|tostring\(Ocsf((?:\.\w+)+)\))\s+(?:(==|!=|startswith)\s+"([^"]*)"|!in\s*\(((?:\s*"[^"]*"\s*,?)+)\)))$`)
+	kqlQuoted = regexp.MustCompile(`"([^"]*)"`)
 )
 
-// kqlMatches runs a query's where filters on one record. It reads what the break-glass rule
-// uses: terms joined by "and", each ClassUid == n, ClassUid in (...), or a column or
-// tostring(Ocsf.path) compared to a string with == or startswith (which, as in KQL, ignores
-// case). The ingestion-time window is left out: every fixture would be in it.
+// kqlFilters is a query's where filters on the table's rows: the where commands that come
+// straight after the table, each with its continuation lines, up to the first other command.
+// Filters after a summarize apply to its results, not to records, so they're left out.
+func kqlFilters(kql string) []string {
+	var stages []string
+	for _, l := range strings.Split(kql, "\n") {
+		l = strings.TrimSpace(l)
+		switch {
+		case l == "" || strings.HasPrefix(l, "//"):
+		case strings.HasPrefix(l, "|") || len(stages) == 0:
+			stages = append(stages, l)
+		default:
+			stages[len(stages)-1] += " " + l
+		}
+	}
+	var filters []string
+	for _, s := range stages[1:] {
+		s = strings.TrimSpace(strings.TrimPrefix(s, "|"))
+		w, ok := strings.CutPrefix(s, "where ")
+		if !ok {
+			break
+		}
+		filters = append(filters, w)
+	}
+	return filters
+}
+
+// kqlMatches runs a query's where filters on one record. It reads what the break-glass and
+// tamper rules use: terms joined by "and", each ClassUid == n, ClassUid in (...), or a column
+// or tostring(Ocsf.path) compared to a string with ==, != or startswith (which, as in KQL,
+// ignores case), or to a list with !in. The ingestion-time window is left out: every fixture
+// would be in it.
 func kqlMatches(t *testing.T, kql string, r map[string]any) bool {
 	t.Helper()
-	for _, w := range kqlWhere.FindAllStringSubmatch(kql, -1) {
-		for _, term := range strings.Split(strings.TrimSpace(w[1]), " and ") {
+	for _, w := range kqlFilters(kql) {
+		for _, term := range kqlAnd.Split(strings.TrimSpace(w), -1) {
 			term = strings.TrimSpace(term)
 			if strings.HasPrefix(term, "ingestion_time() ") {
 				continue
@@ -157,10 +186,18 @@ func kqlMatches(t *testing.T, kql string, r map[string]any) bool {
 				} else {
 					t.Fatalf("can't run the KQL term %q: no column %s", term, m[3])
 				}
-				if m[5] == "==" {
+				switch m[5] {
+				case "==":
 					ok = got == m[6]
-				} else {
+				case "!=":
+					ok = got != m[6]
+				case "startswith":
 					ok = strings.HasPrefix(strings.ToLower(got), strings.ToLower(m[6]))
+				default: // !in, which, like == and !=, doesn't ignore case
+					ok = true
+					for _, v := range kqlQuoted.FindAllStringSubmatch(m[7], -1) {
+						ok = ok && got != v[1]
+					}
 				}
 			}
 			if !ok {
@@ -172,7 +209,8 @@ func kqlMatches(t *testing.T, kql string, r map[string]any) bool {
 }
 
 // splMatches runs a search's first command (the text before the first |) on one record:
-// field=value terms, where * matches anything and case doesn't matter, as in Splunk, joined
+// field=value and field!=value terms, where * matches anything and case doesn't matter, and
+// a field the record doesn't have matches neither, as in Splunk, joined
 // by spaces or AND, by OR, and in parentheses. sourcetype and the time bounds are left out:
 // every fixture would pass them.
 func splMatches(t *testing.T, spl string, r map[string]any) bool {
@@ -269,11 +307,12 @@ func (p *splParser) term() bool {
 	if !found {
 		p.t.Fatalf("can't run the search term %q", tok)
 	}
+	field, negated := strings.CutSuffix(field, "!")
 	switch field {
 	case "sourcetype", "index", "earliest", "latest", "_index_earliest", "_index_latest":
 		return true
 	}
 	pattern := strings.ReplaceAll(regexp.QuoteMeta(strings.Trim(want, `"`)), `\*`, ".*")
 	got := value(p.r, field)
-	return got != "" && regexp.MustCompile("(?i)^"+pattern+"$").MatchString(got)
+	return got != "" && regexp.MustCompile("(?i)^"+pattern+"$").MatchString(got) != negated
 }

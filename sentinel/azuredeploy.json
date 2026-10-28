@@ -527,6 +527,67 @@
       "type": "Microsoft.SecurityInsights/alertRules",
       "apiVersion": "2024-09-01",
       "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
+      "name": "c15e98f3-8667-42cf-b441-a3ff5a9d189d",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Altiward: a Mac account's Platform SSO link may now name someone else",
+        "description": "A Mac account's Platform SSO link changed in a way that may put the account on someone\nelse's UPN: it moved to another account, or it was added when the account was last linked\nto someone else, when another Mac account has the same link, or while someone held admin\nrights. Altiward takes each person's UPN from these links, so later elevations on that\naccount carry the new UPN. Account is the Mac account, PreviousUpn the account it was linked\nto before (empty for none) and Upn the one it is linked to now. Check with the account's\nowner, and in your identity provider, that the new link is theirs. Other links added or\nremoved (altiward.tamper.platform_sso_link), as registering for Platform SSO does, don't\nalert.\n",
+        "severity": "High",
+        "enabled": true,
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == \"altiward.tamper.platform_sso_link_changed\"\n| extend Account = tostring(Ocsf.unmapped.altiward.detail.user),\n    PreviousUpn = tostring(Ocsf.unmapped.altiward.detail.previous_upn), Upn = tostring(Ocsf.unmapped.altiward.detail.upn)\n| project TimeGenerated, DeviceSerial, Account, PreviousUpn, Upn, Message\n",
+        "queryFrequency": "PT15M",
+        "queryPeriod": "PT15M",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "DefenseEvasion",
+          "Persistence"
+        ],
+        "techniques": [
+          "T1098",
+          "T1556"
+        ],
+        "entityMappings": [
+          {
+            "entityType": "Host",
+            "fieldMappings": [
+              {
+                "identifier": "HostName",
+                "columnName": "DeviceSerial"
+              }
+            ]
+          },
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "identifier": "Name",
+                "columnName": "Account"
+              }
+            ]
+          },
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "identifier": "FullName",
+                "columnName": "Upn"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "templateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/alertRules",
+      "apiVersion": "2024-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', parameters('workspace'))]",
       "name": "e9245a96-0fbb-4cce-bd3c-d8741bd9a107",
       "kind": "Scheduled",
       "properties": {
@@ -624,10 +685,10 @@
       "kind": "Scheduled",
       "properties": {
         "displayName": "Altiward: a tamper check is failing",
-        "description": "One of the Altiward agent's integrity checks failed on a Mac, such as SAP Privileges'\nsettings no longer being managed. A failure and its fix share finding_info.uid, so only\nchecks still failing at the end of the hour alert. A refused or unconfirmed grant claim\n(altiward.tamper.grant_claim) is left out: \"a SAP Privileges grant claim was refused or\nnot confirmed\" alerts on it sooner, at High.\n",
+        "description": "One of the Altiward agent's integrity checks failed on a Mac, such as SAP Privileges'\nsettings no longer being managed. A failure and its fix share finding_info.uid, so only\nchecks still failing at the end of the hour alert. A refused or unconfirmed grant claim\n(altiward.tamper.grant_claim) and a Platform SSO link that may now name someone else\n(altiward.tamper.platform_sso_link_changed) are left out: their own rules alert on them\nsooner, at High. So are other Platform SSO links added or removed\n(altiward.tamper.platform_sso_link), which mostly record people registering for Platform\nSSO.\n",
         "severity": "Medium",
         "enabled": true,
-        "query": "AltiwardOCSF_CL\n| where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) startswith \"altiward.tamper.\"\n    and tostring(Ocsf.finding_info.analytic.name) != \"altiward.tamper.grant_claim\"\n| summarize arg_max(TimeGenerated, ActivityId, SeverityId, Message) by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial\n| where ActivityId == 1\n",
+        "query": "AltiwardOCSF_CL\n| where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) startswith \"altiward.tamper.\"\n    and tostring(Ocsf.finding_info.analytic.name) !in (\"altiward.tamper.grant_claim\",\n    \"altiward.tamper.platform_sso_link\", \"altiward.tamper.platform_sso_link_changed\")\n| summarize arg_max(TimeGenerated, ActivityId, SeverityId, Message) by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial\n| where ActivityId == 1\n",
         "queryFrequency": "PT1H",
         "queryPeriod": "PT1H",
         "triggerOperator": "GreaterThan",
@@ -654,7 +715,7 @@
         "eventGroupingSettings": {
           "aggregationKind": "AlertPerResult"
         },
-        "templateVersion": "1.1.0"
+        "templateVersion": "1.2.0"
       }
     }
   ]
