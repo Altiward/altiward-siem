@@ -109,20 +109,20 @@ describes (altiward-forwarder uses the same table). Rules can't be created befor
 
 ### All analytics rules at once
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAltiward%2Faltiward-siem%2Fv1.0.0%2Fsentinel%2Fazuredeploy.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAltiward%2Faltiward-siem%2Fv1.2.0%2Fsentinel%2Fazuredeploy.json)
 
 Choose the resource group of your Sentinel workspace and enter the workspace's name. It
 creates the rules turned on, with one alert per result row. The button deploys
-[`sentinel/azuredeploy.json`](sentinel/azuredeploy.json) from the `v1.0.0` release.
+[`sentinel/azuredeploy.json`](sentinel/azuredeploy.json) from the `v1.2.0` release.
 
 ### Verify downloaded release files
 
 Releases include `SHA256SUMS` and its keyless signature bundle, `SHA256SUMS.sigstore.json`.
 To verify a release, install [cosign](https://docs.sigstore.dev/cosign/system_config/installation/)
-and download all four assets from the chosen release into a new directory. For 1.0.0:
+and download all four assets from the chosen release into a new directory. For 1.2.0:
 
 ```sh
-tag=v1.0.0
+tag=v1.2.0
 mkdir "altiward-siem-$tag"
 cd "altiward-siem-$tag"
 for file in azuredeploy.json RELEASE_NOTES.md SHA256SUMS SHA256SUMS.sigstore.json; do
