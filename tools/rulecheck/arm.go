@@ -47,6 +47,7 @@ type armRules struct {
 	Tactics               []string          `json:"tactics"`
 	Techniques            []string          `json:"techniques"`
 	EntityMappings        []entityMapping   `json:"entityMappings"`
+	AlertDetailsOverride  map[string]string `json:"alertDetailsOverride,omitempty"`
 	EventGroupingSettings map[string]string `json:"eventGroupingSettings"`
 	TemplateVersion       string            `json:"templateVersion"`
 }
@@ -111,6 +112,7 @@ func buildARM(rules []rule) ([]byte, error) {
 				Tactics:               r.Tactics,
 				Techniques:            techniques,
 				EntityMappings:        r.EntityMappings,
+				AlertDetailsOverride:  r.AlertDetailsOverride,
 				EventGroupingSettings: map[string]string{"aggregationKind": "AlertPerResult"},
 				TemplateVersion:       r.Version,
 			},

@@ -2,8 +2,14 @@ id: b5d482eb-1171-4a83-88d2-4de9df7ad23b
 name: "Altiward: a Mac stopped checking in"
 description: |
   The Altiward server hasn't heard from a Mac for longer than the console's setting allows
-  (72 hours by default). The agent may have been removed. The Mac checking in again closes
-  the finding with the same finding_info.uid.
+  (72 hours by default; Basis no_contact, Medium). With Intune connected, it also raises one
+  early when Intune has heard from the Mac at least 2 hours after its last check-in with
+  Altiward (Basis mdm_check_in, High): the Mac is on and online, so its agent may have been
+  removed or stopped. MdmLastCheckIn is Intune's last check-in from the Mac, AdminMembers
+  the Mac's admins at its last check-in. Message also names any new key for the Mac waiting
+  for approval, which the agent can't report with until it is approved. The Mac checking in
+  again closes the finding with the same finding_info.uid, so only Macs still silent at the
+  end of the hour alert.
 severity: Medium
 requiredDataConnectors: []
 queryFrequency: 1h
@@ -17,14 +23,22 @@ relevantTechniques:
 query: |
   AltiwardOCSF_CL
   | where ClassUid == 2004 and tostring(Ocsf.finding_info.analytic.name) == "altiward.agent_silent"
-  | summarize arg_max(TimeGenerated, ActivityId, Message) by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial
+  | extend Basis = tostring(Ocsf.unmapped.altiward.detail.basis),
+      LastSeenAt = tostring(Ocsf.unmapped.altiward.detail.last_seen_at),
+      MdmLastCheckIn = tostring(Ocsf.unmapped.altiward.detail.mdm_last_check_in),
+      AdminMembers = strcat_array(Ocsf.unmapped.altiward.detail.admin_members, ", ")
+  | summarize arg_max(TimeGenerated, ActivityId, Basis, LastSeenAt, MdmLastCheckIn, AdminMembers, Message)
+      by Uid = tostring(Ocsf.finding_info.uid), DeviceSerial
   | where ActivityId == 1
+  | extend AlertSeverity = iff(Basis == "mdm_check_in", "High", "Medium")
 entityMappings:
   - entityType: Host
     fieldMappings:
       - identifier: HostName
         columnName: DeviceSerial
+alertDetailsOverride:
+  alertSeverityColumnName: AlertSeverity
 tags:
   - altiward
-version: 1.0.0
+version: 1.1.0
 kind: Scheduled

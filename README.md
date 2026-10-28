@@ -34,12 +34,12 @@ means it also works with altiward-forwarder's records, which are grants and revo
 | A SAP Privileges grant claim the agent refused or Privileges' log didn't confirm | Altiward | [rule](sentinel/analytics-rules/grant-claim.yaml) | [alert](splunk/searches/grant-claims-refused-or-not-confirmed.spl) |
 | A Mac account's Platform SSO link that may now name someone else | Altiward | [rule](sentinel/analytics-rules/platform-sso-link-changed.yaml) | [alert](splunk/searches/platform-sso-link-changed.spl) |
 | A device key replaced without approval | Altiward | [rule](sentinel/analytics-rules/device-key-replaced-without-approval.yaml) | [alert](splunk/searches/device-key-replaced-without-approval.spl) |
-| A device key waiting for approval | Altiward | [rule](sentinel/analytics-rules/device-key-waiting-for-approval.yaml) | [alert](splunk/searches/device-key-waiting-for-approval.spl) |
+| A device key waiting for approval (High with an Intune mismatch) | Altiward | [rule](sentinel/analytics-rules/device-key-waiting-for-approval.yaml) | [alert](splunk/searches/device-key-waiting-for-approval.spl), [High alert](splunk/searches/device-key-waiting-for-approval-with-an-intune-mismatch.spl) |
 | A device key that the Mac had already replaced by rotation, used again | Altiward | [rule](sentinel/analytics-rules/rotated-device-key-used.yaml) | [alert](splunk/searches/rotated-device-key-used.spl) |
 | Bursts of new Macs enrolled with one token | Altiward | [hunting](sentinel/hunting/enrolment-bursts.kql) | [report](splunk/searches/enrolment-bursts.spl) |
 | Persistence that appeared while someone was admin | Altiward | [rule](sentinel/analytics-rules/persistence-while-admin.yaml) | [alert](splunk/searches/persistence-while-admin.spl) |
 | A local account that appeared while someone was admin | Altiward | [rule](sentinel/analytics-rules/account-created.yaml) | [alert](splunk/searches/local-account-created-while-admin.spl) |
-| A Mac that stopped checking in | Altiward | [rule](sentinel/analytics-rules/agent-silent.yaml) | [alert](splunk/searches/macs-that-stopped-checking-in.spl) |
+| A Mac that stopped checking in (High when Intune still hears from it) | Altiward | [rule](sentinel/analytics-rules/agent-silent.yaml) | [alert](splunk/searches/macs-that-stopped-checking-in.spl), [High alert](splunk/searches/macs-that-stopped-checking-in-while-intune-hears-from-them.spl) |
 | A grant or revoke the Mac's admin group contradicts | Altiward | [rule](sentinel/analytics-rules/contradicted-claim.yaml) | [alert](splunk/searches/contradicted-grants-and-revokes.spl) |
 | The console's break-glass token used | Altiward | [rule](sentinel/analytics-rules/break-glass-token.yaml) | [alert](splunk/searches/break-glass-token-use.spl) |
 | More than 10 elevations by one user in 7 days | Both | [rule](sentinel/analytics-rules/frequent-elevations.yaml) | [alert](splunk/searches/frequent-elevations.spl) |
@@ -59,13 +59,29 @@ unexplained-admin-rights finding closed because the rights were removed still al
 On a Mac registered for Platform SSO, Altiward takes each person's UPN from their Mac
 account's Platform SSO link. A link that may now name someone else is High, with the Mac
 account and the UPNs before and after: check with the account's owner, and in your identity
-provider, that the new link is theirs. Other links added or removed, which mostly record
-people registering for Platform SSO, don't alert.
+provider, that the new link is theirs. Each change is a finding of its own that nothing
+closes, so each one alerts once, whatever happens to the link later. Other links added or
+removed, which mostly record people registering for Platform SSO, don't alert.
+
+A Mac that stopped checking in is Medium when the server hasn't heard from it for the
+console's limit (72 hours by default; Basis `no_contact`). With Intune connected, the server
+raises it early, at High, when Intune has heard from the Mac at least 2 hours after its last
+check-in with Altiward (Basis `mdm_check_in`): the Mac is on and online, so its agent may
+have been removed or stopped. Each shows Intune's last check-in from the Mac and the Mac's
+admins at its last check-in, and its message names any new key for the Mac waiting for
+approval.
+
+Sentinel gives these two rules' alerts the severity of the record (`alertDetailsOverride`).
+Splunk can't vary an alert's severity by result, so each has a second saved search for its
+High records, and the Medium one leaves them out.
 
 In the device-key detections, a pending key is Medium and needs checking against the Mac's
 last check-in, the reported hardware UUID comparison and its owner's expectations. With
-**Approve every new Mac** on, every new Mac raises one too. A key replaced with approval
-off is High. Enrolment bursts count distinct claimed serials per tenant and token over an
+**Approve every new Mac** on, every new Mac raises one too. With Intune connected, MdmCheck
+says what Intune made of the device ID the Mac sent: a pending key is High when it is
+`mismatch`, as Intune has that ID under another serial or on another platform, so it is
+another Mac's or another device's and the key waits for approval whatever the settings.
+A key replaced with approval off is High. Enrolment bursts count distinct claimed serials per tenant and token over an
 hour, with a tunable threshold of 10. Normal rollouts can produce bursts too; compare independent
 inventory, because a shared enrolment token can enrol invented serials.
 

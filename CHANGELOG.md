@@ -35,6 +35,19 @@ altiward-forwarder.
   twice, and leaves out other links added or removed (`altiward.tamper.platform_sso_link`),
   which mostly record people registering for Platform SSO: before, a rollout raised one
   alert for each person.
+- "A Mac stopped checking in" alerts at High when Altiward server 1.2.0 raised the silence
+  early because Intune still hears from the Mac (`basis` `mdm_check_in`), and at Medium
+  otherwise, as before. It shows the basis, the Mac's last check-in, Intune's last check-in
+  and the Mac's admins at its last check-in. Sentinel sets each alert's severity from the
+  rule's `AlertSeverity` column (`alertDetailsOverride`); Splunk adds a High saved search,
+  "Macs that stopped checking in while Intune hears from them", and the Medium one leaves
+  those silences out. The Mac checking in again still closes the finding. Needs Altiward.
+- "A device key is waiting for approval" alerts at High when the Mac enrolled the key with
+  an Intune device ID that Intune has under another serial or on another platform
+  (`mdm_check` `mismatch`, Altiward server 1.2.0), and at Medium otherwise, as before. It
+  shows `mdm_check`. Sentinel sets the severity from the `AlertSeverity` column; Splunk adds
+  a High saved search, "Device key waiting for approval with an Intune mismatch", and the
+  Medium one leaves those keys out. Needs Altiward.
 
 ## 1.0.1 - unreleased
 

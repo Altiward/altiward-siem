@@ -1,0 +1,3 @@
+sourcetype="altiward:ocsf" class_uid=2004 finding_info.analytic.name="altiward.agent_silent" (unmapped.altiward.detail.basis="mdm_check_in" OR activity_name="Close")
+| stats latest(activity_name) as last latest(message) as message latest(unmapped.altiward.detail.basis) as basis latest(unmapped.altiward.detail.last_seen_at) as last_seen_at latest(unmapped.altiward.detail.mdm_last_check_in) as mdm_last_check_in values(unmapped.altiward.detail.admin_members{}) as admin_members by finding_info.uid host
+| where last="Create"
