@@ -135,6 +135,10 @@ cosign verify-blob --bundle SHA256SUMS.sigstore.json \
 sha256sum -c SHA256SUMS
 ```
 
+The command works as written with cosign 3. With cosign 2, add `--new-bundle-format` to the
+`cosign verify-blob` line: 2.4 needs it and later 2.x versions accept it. Versions older than
+2.4 can't check these signatures.
+
 On macOS, replace the final command with `shasum -a 256 -c SHA256SUMS`. Continue only if
 both verification commands succeed. The signature binds the checksums to this repository's
 release workflow, the chosen tag and the GitHub Actions OIDC issuer. Checksums alone detect
